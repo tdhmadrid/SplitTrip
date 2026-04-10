@@ -734,8 +734,9 @@ a { color:inherit; text-decoration:none }
 <div class="toast" id="toast"></div>
 
 <!-- ═══════════════════ SCRIPT ═══════════════════════════════ -->
-<script type="module">
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script>
+const { createClient } = supabase;
 
 // ── CONFIG — replace with your Supabase project values ───────
 const SURL = 'https://omhqcxzlokumzwywfuxh.supabase.co';
@@ -854,10 +855,6 @@ function showT(id, btn) {
 window.showT = showT;
 
 // ── AVATAR HELPERS ────────────────────────────────────────────
-function initials(name, email) {
-  const n = name || email || '?';
-  return n.split(' ').map(w => w[0]).join('').toUpperCase().slice(0,2);
-}
 function updateTopbarAvatar() {
   const btn = document.getElementById('topbar-avatar');
   const p = ST.profile;
