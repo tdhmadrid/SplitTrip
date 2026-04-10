@@ -2,6 +2,9 @@
 <html lang="es" data-theme="dark">
 <head>
 <meta charset="UTF-8">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SplitTrip — Viaja en grupo, divide fácil</title>
 <link href="https://fonts.googleapis.com/css2?family=Cabinet+Grotesk:wght@400;500;700;800;900&family=Satoshi:wght@300;400;500;700&display=swap" rel="stylesheet">
@@ -884,22 +887,28 @@ window.doSignOut = async function() {
 
 // ── BOOT ──────────────────────────────────────────────────────
 async function boot() {
-  var params     = new URLSearchParams(window.location.search);
-  var joinToken  = params.get('join');
-  var joinCode   = params.get('code');
+  var params    = new URLSearchParams(window.location.search);
+  var joinToken = params.get('join');
+  var joinCode  = params.get('code');
   if (joinToken) ST.pendingJoin = { type:'token', value:joinToken };
   if (joinCode)  ST.pendingJoin = { type:'code',  value:joinCode };
 
-  var sessionRes = await sb.auth.getSession();
-  if (sessionRes.data && sessionRes.data.session) {
-    await loadAndShowApp(sessionRes.data.session.user);
-  } else {
+  try {
+    var sessionRes = await sb.auth.getSession();
+    var session    = sessionRes.data && sessionRes.data.session;
+    if (session) {
+      await loadAndShowApp(session.user);
+    } else {
+      window.showView('auth');
+    }
+  } catch(e) {
+    console.error('Boot error:', e);
     window.showView('auth');
   }
 
   sb.auth.onAuthStateChange(async function(event, session) {
     if (event === 'SIGNED_IN' && session) await loadAndShowApp(session.user);
-    if (event === 'SIGNED_OUT') window.showView('auth');
+    if (event === 'SIGNED_OUT') { ST.user = null; ST.profile = null; window.showView('auth'); }
   });
 }
 
@@ -1099,7 +1108,8 @@ window.createTrip = async function() {
 
   if (res.error) {
     console.error('Trip insert error:', res.error);
-    alertEl.innerHTML='<div class="alert err">Error: '+res.error.message+'</div>';
+    var msg = res.error.message || res.error.details || JSON.stringify(res.error);
+    alertEl.innerHTML='<div class="alert err" style="font-size:13px">❌ '+msg+'</div>';
     return;
   }
   var tripData = res.data;
