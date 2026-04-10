@@ -20,9 +20,9 @@
 
 En **Authentication > URL Configuration**:
 
-- **Site URL**: `https://tu-usuario.github.io/splittrip`
+- **Site URL**: `https://tdhmadrid.github.io/SplitTrip`
 - **Redirect URLs** (añadir):
-  - `https://tu-usuario.github.io/splittrip`
+  - `https://tdhmadrid.github.io/SplitTrip`
   - `http://localhost:3000` (para desarrollo local)
 
 En **Authentication > Email Templates**, puedes personalizar el email de magic link.
