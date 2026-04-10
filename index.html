@@ -736,16 +736,13 @@ a { color:inherit; text-decoration:none }
 <!-- ═══════════════════ SCRIPT ═══════════════════════════════ -->
 <script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script>
-(function() {
-'use strict';
-
-// ── CONFIG ────────────────────────────────────────────────────
-var SURL = 'https://omhqcxzlokumzwywfuxh.supabase.co';
-var SKEY = 'sb_publishable_xzrBy3BAoDi-BBeCZBBZqQ_oVhy89ls';
-var sb   = supabase.createClient(SURL, SKEY);
-var DEMO = false;
-
-// ── STATE ─────────────────────────────────────────────────────
+// ── GLOBALS (accessible from inline onclick) ──────────────────
+var SURL   = 'https://omhqcxzlokumzwywfuxh.supabase.co';
+var SKEY   = 'sb_publishable_xzrBy3BAoDi-BBeCZBBZqQ_oVhy89ls';
+var sb     = supabase.createClient(SURL, SKEY);
+var DEMO   = false;
+var COLORS = ['#FF5C3A','#39E07B','#38BDF8','#A78BFA','#FFBC40','#F472B6','#34D399','#FB923C'];
+var PALETTE= ['#FF5C3A','#39E07B','#38BDF8','#A78BFA','#FFBC40','#F472B6','#34D399','#FB923C'];
 var ST = {
   user:null, profile:null,
   trips:[], cur:null,
@@ -755,8 +752,8 @@ var ST = {
   pendingJoin:null
 };
 
-var COLORS  = ['#FF5C3A','#39E07B','#38BDF8','#A78BFA','#FFBC40','#F472B6','#34D399','#FB923C'];
-var PALETTE = ['#FF5C3A','#39E07B','#38BDF8','#A78BFA','#FFBC40','#F472B6','#34D399','#FB923C'];
+(function() {
+'use strict';
 
 // ── UTILS ─────────────────────────────────────────────────────
 function initials(name, email) {
@@ -785,6 +782,8 @@ function showToast(msg) {
   setTimeout(function(){ t.classList.remove('on'); }, 3000);
 }
 window.toast = showToast;
+window.showToast = showToast;
+window.renderNTInvites = renderNTInvites;
 
 // ── THEME ─────────────────────────────────────────────────────
 window.toggleTheme = function() {
@@ -1061,9 +1060,13 @@ window.addNTInvite = function() {
 };
 function renderNTInvites() {
   document.getElementById('nt-invite-list').innerHTML = ST.ntInvites.map(function(e,i){
-    return '<div class="mchp" style="background:'+COLORS[i%COLORS.length]+'22;color:'+COLORS[i%COLORS.length]+'">'+e+'<span onclick="ST.ntInvites.splice('+i+',1);renderNTInvites()">×</span></div>';
+    return '<div class="mchp" style="background:'+COLORS[i%COLORS.length]+'22;color:'+COLORS[i%COLORS.length]+'">'+e+'<span onclick="removeNTInvite('+i+')">×</span></div>';
   }).join('');
 }
+window.removeNTInvite = function(i) {
+  ST.ntInvites.splice(i, 1);
+  renderNTInvites();
+};
 window.selE = function(el, e) {
   ST.emoji = e;
   document.querySelectorAll('#epick .eopt').forEach(function(x){ x.classList.remove('on'); });
@@ -1086,12 +1089,28 @@ window.createTrip = async function() {
     return;
   }
 
-  var res = await sb.from('trips').insert({ name:nameVal, destination:destVal, emoji:ST.emoji,
-    start_date:document.getElementById('ts').value||null, end_date:document.getElementById('te').value||null,
-    owner_id:ST.user.id, status:'planning' }).select().single();
-  if (res.error) { alertEl.innerHTML='<div class="alert err">'+res.error.message+'</div>'; return; }
+  // Insert trip
+  var res = await sb.from('trips').insert({
+    name:nameVal, destination:destVal, emoji:ST.emoji,
+    start_date:document.getElementById('ts').value||null,
+    end_date:document.getElementById('te').value||null,
+    owner_id:ST.user.id, status:'planning'
+  }).select().single();
+
+  if (res.error) {
+    console.error('Trip insert error:', res.error);
+    alertEl.innerHTML='<div class="alert err">Error: '+res.error.message+'</div>';
+    return;
+  }
   var tripData = res.data;
-  await sb.from('trip_members').insert({ trip_id:tripData.id, user_id:ST.user.id, role:'owner' });
+
+  // Add creator as owner member
+  var mRes = await sb.from('trip_members').insert({
+    trip_id:tripData.id, user_id:ST.user.id, role:'owner'
+  });
+  if (mRes.error) {
+    console.error('Member insert error:', mRes.error);
+  }
 
   for (var i=0; i<ST.ntInvites.length; i++) {
     var invEmail = ST.ntInvites[i];
