@@ -1,0 +1,1453 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SplitTrip — Viaja en grupo, divide fácil</title>
+<link href="https://fonts.googleapis.com/css2?family=Cabinet+Grotesk:wght@400;500;700;800;900&family=Satoshi:wght@300;400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<script>
+  // Init EmailJS — replace with your public key
+  (function(){ emailjs.init({ publicKey: "YOUR_EMAILJS_PUBLIC_KEY" }); })();
+</script>
+<style>
+/* ── DESIGN TOKENS ──────────────────────────────────────────── */
+:root {
+  --r:16px; --r2:12px; --r3:8px; --r4:6px;
+  --trans: all .18s cubic-bezier(.4,0,.2,1);
+}
+
+/* DARK MODE */
+[data-theme="dark"] {
+  --bg:      #0A0F1E;
+  --bg2:     #111827;
+  --bg3:     #1C2539;
+  --bg4:     #253044;
+  --glass:   rgba(255,255,255,0.04);
+  --glass2:  rgba(255,255,255,0.08);
+  --glass3:  rgba(255,255,255,0.13);
+  --border:  rgba(255,255,255,0.10);
+  --border2: rgba(255,255,255,0.18);
+  --text:    #F5F7FF;
+  --text2:   rgba(245,247,255,0.65);
+  --text3:   rgba(245,247,255,0.35);
+  --card:    rgba(255,255,255,0.04);
+  --card-b:  rgba(255,255,255,0.10);
+  --input-bg:rgba(255,255,255,0.07);
+  --shadow:  0 8px 32px rgba(0,0,0,0.4);
+  --blob1:   rgba(255,92,58,0.10);
+  --blob2:   rgba(57,224,123,0.07);
+  --blob3:   rgba(56,189,248,0.06);
+}
+
+/* LIGHT MODE */
+[data-theme="light"] {
+  --bg:      #F4F1EB;
+  --bg2:     #EEEBE3;
+  --bg3:     #E6E2D8;
+  --bg4:     #DEDAD0;
+  --glass:   rgba(255,255,255,0.7);
+  --glass2:  rgba(255,255,255,0.85);
+  --glass3:  rgba(255,255,255,0.95);
+  --border:  rgba(0,0,0,0.08);
+  --border2: rgba(0,0,0,0.15);
+  --text:    #1A1A2E;
+  --text2:   rgba(26,26,46,0.60);
+  --text3:   rgba(26,26,46,0.35);
+  --card:    rgba(255,255,255,0.80);
+  --card-b:  rgba(0,0,0,0.08);
+  --input-bg:rgba(255,255,255,0.9);
+  --shadow:  0 8px 32px rgba(0,0,0,0.10);
+  --blob1:   rgba(255,92,58,0.07);
+  --blob2:   rgba(57,224,123,0.05);
+  --blob3:   rgba(56,189,248,0.05);
+}
+
+/* ACCENT COLORS (same both modes) */
+:root {
+  --coral:  #FF5C3A;
+  --coral2: #FF7A5C;
+  --coralglow: rgba(255,92,58,0.25);
+  --lime:   #39E07B;
+  --lime2:  #5FF595;
+  --limeglow: rgba(57,224,123,0.2);
+  --sky:    #38BDF8;
+  --amber:  #FFBC40;
+  --violet: #A78BFA;
+  --red:    #FF4757;
+}
+
+/* ── RESET ─────────────────────────────────────────────────── */
+*,*::before,*::after { box-sizing:border-box; margin:0; padding:0 }
+html { scroll-behavior:smooth }
+body {
+  font-family:'Satoshi',sans-serif;
+  background:var(--bg);
+  color:var(--text);
+  font-size:15px;
+  line-height:1.6;
+  min-height:100vh;
+  overflow-x:hidden;
+  transition:background .3s, color .3s;
+}
+h1,h2,h3,h4 { font-family:'Cabinet Grotesk',sans-serif; line-height:1.1; letter-spacing:-0.02em }
+button { cursor:pointer; border:none; font-family:'Satoshi',sans-serif; font-size:14px; transition:var(--trans) }
+input,select,textarea {
+  font-family:'Satoshi',sans-serif; font-size:14px; outline:none;
+  background:var(--input-bg); border:1.5px solid var(--border2);
+  border-radius:var(--r3); padding:10px 14px;
+  color:var(--text); width:100%; transition:var(--trans);
+}
+input:focus,select:focus,textarea:focus {
+  border-color:var(--coral);
+  box-shadow:0 0 0 3px var(--coralglow);
+}
+input::placeholder { color:var(--text3) }
+[data-theme="light"] select option { background:#fff; color:#1A1A2E }
+[data-theme="dark"] select option  { background:#111827; color:#F5F7FF }
+a { color:inherit; text-decoration:none }
+.hide { display:none!important }
+
+/* ── BLOBS ─────────────────────────────────────────────────── */
+.blob { position:fixed; border-radius:50%; filter:blur(90px); pointer-events:none; z-index:0; transition:background .3s }
+.b1 { width:600px;height:600px;background:radial-gradient(circle,var(--blob1),transparent 70%);top:-150px;right:-150px }
+.b2 { width:700px;height:700px;background:radial-gradient(circle,var(--blob2),transparent 70%);bottom:-250px;left:-150px }
+.b3 { width:500px;height:500px;background:radial-gradient(circle,var(--blob3),transparent 70%);top:35%;left:35% }
+
+/* ── TOPBAR ────────────────────────────────────────────────── */
+.topbar {
+  position:sticky; top:0; z-index:100;
+  background:var(--bg); opacity:0.92;
+  backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--border);
+  padding:0 24px; height:62px;
+  display:flex; align-items:center; justify-content:space-between;
+  transition:background .3s;
+}
+.logo {
+  font-family:'Cabinet Grotesk',sans-serif;
+  font-size:21px; font-weight:900; letter-spacing:-1px;
+  display:flex; align-items:center; gap:9px;
+}
+.logo-mark {
+  width:33px; height:33px;
+  background:linear-gradient(135deg,var(--coral),#FF8C6A);
+  border-radius:9px; display:flex; align-items:center;
+  justify-content:center; font-size:16px;
+}
+.logo em { color:var(--coral); font-style:normal }
+.nav-center { display:flex; gap:3px; background:var(--glass2); border:1px solid var(--border); border-radius:40px; padding:4px }
+.npill { padding:7px 17px; border-radius:36px; font-size:13px; font-weight:600; color:var(--text2); background:transparent }
+.npill:hover { color:var(--text) }
+.npill.on { background:var(--coral); color:#fff }
+.nav-right { display:flex; align-items:center; gap:10px }
+.theme-btn {
+  width:36px; height:36px; border-radius:50%; background:var(--glass2);
+  border:1px solid var(--border); font-size:16px;
+  display:flex; align-items:center; justify-content:center;
+}
+.theme-btn:hover { background:var(--glass3); transform:scale(1.08) }
+.avatar-btn {
+  width:36px; height:36px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  font-size:13px; font-weight:800; border:2px solid var(--border2);
+  cursor:pointer; position:relative;
+}
+.cta { padding:9px 18px; border-radius:24px; font-size:13px; font-weight:700; background:var(--coral); color:#fff }
+.cta:hover { background:var(--coral2); transform:translateY(-1px); box-shadow:0 8px 24px var(--coralglow) }
+
+/* ── LAYOUT ────────────────────────────────────────────────── */
+.view { display:none; position:relative; z-index:1 }
+.view.on { display:block }
+.page { min-height:calc(100vh - 62px); padding:28px 24px; max-width:1120px; margin:0 auto }
+.ph { display:flex; align-items:center; justify-content:space-between; margin-bottom:22px }
+.pt { font-family:'Cabinet Grotesk',sans-serif; font-size:25px; font-weight:800; letter-spacing:-0.5px }
+.pt em { color:var(--coral); font-style:normal }
+
+/* ── BUTTONS ───────────────────────────────────────────────── */
+.btn-p { background:var(--coral); color:#fff; border-radius:var(--r2); padding:10px 20px; font-weight:700; font-size:13px }
+.btn-p:hover { background:var(--coral2); transform:translateY(-1px); box-shadow:0 8px 20px var(--coralglow) }
+.btn-g { background:var(--glass2); border:1.5px solid var(--border2); color:var(--text2); border-radius:var(--r3); padding:9px 16px; font-weight:600 }
+.btn-g:hover { background:var(--glass3); color:var(--text); border-color:var(--border2) }
+.btn-l { background:var(--lime); color:#0A1800; border-radius:10px; padding:7px 14px; font-weight:700; font-size:12px }
+.btn-l:hover { background:var(--lime2); box-shadow:0 4px 14px var(--limeglow) }
+.btn-ghost { background:transparent; border:none; color:var(--text2); padding:6px 10px; border-radius:var(--r3) }
+.btn-ghost:hover { background:var(--glass2); color:var(--text) }
+.btn-danger { background:rgba(255,71,87,0.12); border:1px solid rgba(255,71,87,0.3); color:var(--red); border-radius:var(--r3); padding:8px 14px; font-weight:600; font-size:13px }
+.btn-danger:hover { background:rgba(255,71,87,0.2) }
+.back-btn { display:inline-flex; align-items:center; gap:6px; font-size:13px; color:var(--text2); padding:7px 14px; border-radius:10px; border:1px solid var(--border); background:var(--glass); margin-bottom:18px; cursor:pointer }
+.back-btn:hover { color:var(--text); background:var(--glass2) }
+
+/* ── AUTH VIEW ─────────────────────────────────────────────── */
+.auth-wrap {
+  min-height:100vh; display:flex; align-items:center; justify-content:center;
+  padding:24px; background:var(--bg);
+}
+.auth-card {
+  background:var(--glass2); border:1px solid var(--border2);
+  border-radius:var(--r); padding:40px 36px;
+  width:100%; max-width:420px;
+  backdrop-filter:blur(20px);
+}
+.auth-logo { text-align:center; margin-bottom:32px }
+.auth-logo-mark {
+  width:56px; height:56px; border-radius:14px;
+  background:linear-gradient(135deg,var(--coral),#FF8C6A);
+  display:flex; align-items:center; justify-content:center;
+  font-size:26px; margin:0 auto 14px;
+}
+.auth-logo-name { font-family:'Cabinet Grotesk',sans-serif; font-size:28px; font-weight:900; letter-spacing:-1px }
+.auth-logo-name em { color:var(--coral); font-style:normal }
+.auth-tagline { font-size:14px; color:var(--text2); margin-top:4px }
+.auth-or { text-align:center; font-size:12px; color:var(--text3); margin:16px 0; position:relative }
+.auth-or::before,.auth-or::after { content:''; position:absolute; top:50%; width:42%; height:1px; background:var(--border2) }
+.auth-or::before { left:0 }
+.auth-or::after { right:0 }
+.join-section { margin-top:20px; padding-top:20px; border-top:1px solid var(--border) }
+.join-title { font-size:13px; font-weight:700; color:var(--text2); margin-bottom:10px }
+
+/* ── CARDS & GRIDS ─────────────────────────────────────────── */
+.tgrid { display:grid; grid-template-columns:repeat(auto-fill,minmax(290px,1fr)); gap:18px }
+.tc {
+  background:var(--card); border:1px solid var(--card-b);
+  border-radius:var(--r); padding:22px; cursor:pointer;
+  transition:var(--trans); position:relative; overflow:hidden;
+}
+.tc::after { content:''; position:absolute; inset:0; background:linear-gradient(135deg,var(--glass2),transparent); opacity:0; transition:opacity .2s }
+.tc:hover { border-color:var(--border2); transform:translateY(-3px); box-shadow:var(--shadow) }
+.tc:hover::after { opacity:1 }
+.tc-emoji { font-size:36px; margin-bottom:12px; display:block; position:relative; z-index:1 }
+.tc-name { font-family:'Cabinet Grotesk',sans-serif; font-size:19px; font-weight:800; letter-spacing:-0.4px; position:relative; z-index:1 }
+.tc-dest { font-size:13px; color:var(--text2); margin-top:3px; position:relative; z-index:1 }
+.tc-badge { position:absolute; top:16px; right:16px; font-size:11px; font-weight:700; padding:3px 9px; border-radius:20px; z-index:2 }
+.sp { background:rgba(57,224,123,0.12); color:var(--lime); border:1px solid rgba(57,224,123,0.3) }
+.pp { background:rgba(255,188,64,0.12); color:var(--amber); border:1px solid rgba(255,188,64,0.3) }
+.dp { background:var(--glass2); color:var(--text3); border:1px solid var(--border) }
+.tc-nums {
+  display:grid; grid-template-columns:repeat(3,1fr); gap:1px;
+  background:var(--border); border-radius:10px; overflow:hidden; margin-top:16px; position:relative; z-index:1;
+}
+.tcn { background:var(--bg2); padding:10px 6px; text-align:center }
+.tcn-v { font-family:'Cabinet Grotesk',sans-serif; font-size:14px; font-weight:800; color:var(--text) }
+.tcn-l { font-size:10px; color:var(--text3); text-transform:uppercase; letter-spacing:0.5px; margin-top:2px }
+.tc-avs { display:flex; align-items:center; margin-top:12px; gap:3px; position:relative; z-index:1 }
+.avc { width:26px; height:26px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:800; border:2px solid var(--bg); flex-shrink:0 }
+
+/* ── TRIP HERO ─────────────────────────────────────────────── */
+.thero { border-radius:var(--r); padding:26px; margin-bottom:22px; border:1px solid var(--card-b); background:var(--card); position:relative; overflow:hidden }
+.thero-bg { position:absolute; inset:0; background:linear-gradient(135deg,rgba(255,92,58,0.06),rgba(57,224,123,0.03),transparent) }
+.thero-c { position:relative; z-index:1 }
+.thero-emoji { font-size:48px; margin-bottom:10px }
+.thero-name { font-size:32px; font-weight:900; letter-spacing:-1.2px }
+.thero-sub { font-size:14px; color:var(--text2); margin-top:4px }
+.thero-tags { display:flex; gap:8px; margin-top:14px; flex-wrap:wrap; align-items:center }
+.tag { padding:4px 11px; border-radius:20px; font-size:12px; font-weight:700; border:1px solid var(--border2); background:var(--glass2); color:var(--text2) }
+.invite-code { font-family:monospace; font-size:13px; background:var(--bg3); border:1px solid var(--border); border-radius:var(--r3); padding:4px 10px; color:var(--coral); letter-spacing:1px; cursor:pointer }
+.invite-code:hover { background:var(--bg4) }
+
+/* ── TABS ──────────────────────────────────────────────────── */
+.tabs { display:flex; gap:3px; margin-bottom:20px; overflow-x:auto; background:var(--glass); border:1px solid var(--border); border-radius:14px; padding:4px }
+.tb { padding:8px 16px; border-radius:10px; font-size:13px; font-weight:600; color:var(--text2); white-space:nowrap; background:transparent }
+.tb.on { background:var(--coral); color:#fff }
+.tb:hover:not(.on) { color:var(--text); background:var(--glass2) }
+.tp { display:none }
+.tp.on { display:block }
+
+/* ── STATS ROW ─────────────────────────────────────────────── */
+.srow { display:grid; grid-template-columns:repeat(auto-fit,minmax(135px,1fr)); gap:12px; margin-bottom:20px }
+.sbox { background:var(--card); border:1px solid var(--card-b); border-radius:var(--r2); padding:16px }
+.sbox-l { font-size:11px; color:var(--text3); text-transform:uppercase; letter-spacing:0.6px; margin-bottom:7px }
+.sbox-v { font-family:'Cabinet Grotesk',sans-serif; font-size:24px; font-weight:900; letter-spacing:-1px }
+.cv { color:var(--coral) } .lv { color:var(--lime) } .av { color:var(--amber) }
+.sbox-s { font-size:11px; color:var(--text3); margin-top:4px }
+
+/* ── EXPENSE LIST ──────────────────────────────────────────── */
+.elist { display:flex; flex-direction:column; gap:9px }
+.ei {
+  background:var(--card); border:1px solid var(--card-b);
+  border-radius:var(--r2); padding:14px 16px;
+  display:flex; align-items:center; gap:13px; transition:var(--trans);
+}
+.ei:hover { border-color:var(--border2); background:var(--glass2) }
+.eico { width:42px; height:42px; border-radius:11px; background:var(--glass2); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; font-size:19px; flex-shrink:0 }
+.en { font-weight:700; font-size:14px; color:var(--text) }
+.em2 { font-size:12px; color:var(--text2); margin-top:2px }
+.ea { font-family:'Cabinet Grotesk',sans-serif; font-size:17px; font-weight:800; text-align:right; white-space:nowrap; color:var(--text) }
+.ep { font-size:11px; color:var(--text3); margin-top:2px; text-align:right }
+.my-share { font-size:11px; padding:2px 7px; border-radius:8px; font-weight:700; margin-top:4px; display:inline-block }
+.my-share.owe { background:rgba(255,71,87,0.12); color:var(--red) }
+.my-share.paid { background:rgba(57,224,123,0.12); color:var(--lime) }
+.my-share.ok { background:var(--glass2); color:var(--text3) }
+
+/* ── BALANCES ──────────────────────────────────────────────── */
+.bgrid { display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:12px; margin-bottom:20px }
+.bc { background:var(--card); border:1px solid var(--card-b); border-radius:var(--r2); padding:18px; text-align:center; transition:var(--trans) }
+.bc:hover { border-color:var(--border2); background:var(--glass2) }
+.bav { width:48px; height:48px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:800; margin:0 auto 10px; border:2px solid var(--border2) }
+.bn { font-weight:700; font-size:13px; color:var(--text) }
+.bam { font-family:'Cabinet Grotesk',sans-serif; font-size:20px; font-weight:900; margin-top:7px }
+.pos { color:var(--lime) } .neg { color:var(--coral) } .zer { color:var(--text3) }
+.bt2 { font-size:10px; color:var(--text3); margin-top:4px }
+.slist { display:flex; flex-direction:column; gap:9px }
+.sitem { background:var(--card); border:1px solid var(--card-b); border-radius:var(--r2); padding:14px 18px; display:flex; align-items:center; justify-content:space-between; gap:12px }
+.stext { font-size:13px; color:var(--text2) }
+.stext strong { color:var(--text); font-weight:700 }
+
+/* ── ITINERARY ─────────────────────────────────────────────── */
+.iday { margin-bottom:20px }
+.dsep { display:flex; align-items:center; gap:12px; margin-bottom:10px }
+.dlbl { font-family:'Cabinet Grotesk',sans-serif; font-size:12px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:var(--coral); white-space:nowrap }
+.dline { flex:1; height:1px; background:var(--border) }
+.ii { background:var(--card); border:1px solid var(--card-b); border-radius:var(--r2); padding:13px 16px; display:flex; gap:13px; margin-bottom:8px; align-items:center; transition:var(--trans) }
+.ii:hover { border-color:var(--border2); background:var(--glass2) }
+.itime { font-size:12px; font-weight:700; color:var(--text3); min-width:46px }
+.iico { width:36px; height:36px; border-radius:9px; background:var(--glass2); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; font-size:16px; flex-shrink:0 }
+.iname { font-weight:700; font-size:14px; color:var(--text) }
+.isub { font-size:12px; color:var(--text2); margin-top:2px }
+.iprice { font-family:'Cabinet Grotesk',sans-serif; font-size:14px; font-weight:800; color:var(--coral); white-space:nowrap; margin-left:auto }
+
+/* ── RESERVAS ──────────────────────────────────────────────── */
+.ri { background:var(--card); border:1px solid var(--card-b); border-radius:var(--r2); padding:14px; display:flex; align-items:center; gap:13px; margin-bottom:9px }
+.rico { width:42px; height:42px; border-radius:11px; background:var(--glass2); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; font-size:19px; flex-shrink:0 }
+.rbadge { padding:3px 9px; border-radius:10px; font-size:11px; font-weight:700; background:rgba(57,224,123,0.12); color:var(--lime); border:1px solid rgba(57,224,123,0.3) }
+
+/* ── CHAT ──────────────────────────────────────────────────── */
+.cwrap { background:var(--card); border:1px solid var(--card-b); border-radius:var(--r); padding:18px }
+.cmsgs { display:flex; flex-direction:column; gap:13px; max-height:340px; overflow-y:auto; margin-bottom:14px; padding-right:4px }
+.cmsgs::-webkit-scrollbar { width:4px }
+.cmsgs::-webkit-scrollbar-thumb { background:var(--border2); border-radius:2px }
+.cmsg { display:flex; gap:9px; align-items:flex-end }
+.cmsg.me { flex-direction:row-reverse }
+.cbub { background:var(--glass2); border:1px solid var(--border); border-radius:14px 14px 14px 4px; padding:10px 13px; max-width:72%; font-size:14px; line-height:1.5; color:var(--text) }
+.cmsg.me .cbub { background:var(--coral); border-color:var(--coral); border-radius:14px 14px 4px 14px; color:#fff }
+.cav { width:30px; height:30px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:800; flex-shrink:0; border:2px solid var(--border) }
+.cmeta { font-size:10px; color:var(--text3); margin-top:4px }
+.cmsg.me .cmeta { text-align:right }
+.cinp { display:flex; gap:9px; align-items:center; margin-top:4px }
+.cinp input { flex:1; border-radius:22px; padding:10px 16px }
+.sbtn { width:42px; height:42px; border-radius:50%; background:var(--coral); color:#fff; display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0 }
+.sbtn:hover { background:var(--coral2); transform:scale(1.05) }
+
+/* ── MARKETPLACE ───────────────────────────────────────────── */
+.mf { display:flex; gap:8px; margin-bottom:20px; overflow-x:auto; padding-bottom:4px }
+.mfb { padding:7px 16px; border-radius:22px; font-size:13px; font-weight:600; border:1px solid var(--border); background:var(--glass); color:var(--text2); white-space:nowrap }
+.mfb.on { background:var(--coral); color:#fff; border-color:var(--coral) }
+.mfb:hover:not(.on) { color:var(--text); border-color:var(--border2) }
+.mgrid { display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:18px }
+.mcard { background:var(--card); border:1px solid var(--card-b); border-radius:var(--r); overflow:hidden; transition:var(--trans); position:relative }
+.mcard:hover { transform:translateY(-4px); box-shadow:var(--shadow); border-color:var(--border2) }
+.mcard.coming { opacity:0.75; cursor:default }
+.mcard.coming:hover { transform:none; box-shadow:none }
+.coming-overlay { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; z-index:10; background:rgba(10,15,30,0.55); backdrop-filter:blur(2px) }
+[data-theme="light"] .coming-overlay { background:rgba(244,241,235,0.55) }
+.coming-pill { background:var(--amber); color:#1A0A00; font-size:13px; font-weight:800; padding:8px 20px; border-radius:24px; letter-spacing:0.3px }
+.mimg { height:160px; display:flex; align-items:center; justify-content:center; position:relative; overflow:hidden }
+.movl { position:absolute; inset:0; background:linear-gradient(to top,rgba(10,15,30,0.5),transparent) }
+[data-theme="light"] .movl { background:linear-gradient(to top,rgba(244,241,235,0.3),transparent) }
+.mcat { position:absolute; top:10px; left:10px; background:rgba(10,15,30,0.7); backdrop-filter:blur(8px); color:#fff; font-size:11px; font-weight:700; padding:4px 10px; border-radius:18px; border:1px solid rgba(255,255,255,0.15); z-index:1 }
+[data-theme="light"] .mcat { background:rgba(255,255,255,0.85); color:var(--text) }
+.mbody { padding:14px }
+.mname { font-family:'Cabinet Grotesk',sans-serif; font-size:15px; font-weight:800; letter-spacing:-0.3px; margin-bottom:4px; color:var(--text) }
+.mloc { font-size:12px; color:var(--text2); margin-bottom:12px }
+.mfoot { display:flex; align-items:center; justify-content:space-between }
+.mprice { font-family:'Cabinet Grotesk',sans-serif; font-size:19px; font-weight:900; color:var(--text) }
+.munit { font-size:12px; font-weight:400; color:var(--text2); font-family:'Satoshi',sans-serif }
+.mstars { font-size:12px; color:var(--text2); margin-top:2px }
+.mstars em { color:var(--amber); font-style:normal }
+
+/* ── MEMBERS ───────────────────────────────────────────────── */
+.members-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:12px }
+.member-card { background:var(--card); border:1px solid var(--card-b); border-radius:var(--r2); padding:16px; display:flex; align-items:center; gap:12px }
+.member-av { width:44px; height:44px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:15px; font-weight:800; flex-shrink:0 }
+.member-name { font-weight:700; font-size:14px; color:var(--text) }
+.member-email { font-size:12px; color:var(--text2); margin-top:2px }
+.member-role { font-size:10px; font-weight:700; padding:2px 7px; border-radius:8px; margin-top:4px; display:inline-block }
+.role-owner { background:rgba(255,92,58,0.12); color:var(--coral) }
+.role-member { background:var(--glass2); color:var(--text3) }
+.invite-row { display:flex; gap:8px; margin-bottom:20px }
+.invite-row input { flex:1 }
+
+/* ── PROFILE VIEW ──────────────────────────────────────────── */
+.profile-card { background:var(--card); border:1px solid var(--card-b); border-radius:var(--r); padding:32px; max-width:480px; margin:0 auto }
+.profile-av-big { width:80px; height:80px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:28px; font-weight:800; margin:0 auto 16px }
+.color-pick { display:flex; gap:8px; flex-wrap:wrap; margin-top:6px }
+.cp-dot { width:28px; height:28px; border-radius:50%; cursor:pointer; border:3px solid transparent; transition:var(--trans) }
+.cp-dot.on { border-color:var(--text) }
+.cp-dot:hover { transform:scale(1.15) }
+
+/* ── MODAL ─────────────────────────────────────────────────── */
+.mov { position:fixed; inset:0; background:rgba(0,0,0,0.65); backdrop-filter:blur(6px); z-index:200; display:none; align-items:flex-end; justify-content:center }
+.mov.on { display:flex }
+.modal { background:var(--bg2); border:1px solid var(--border2); border-radius:var(--r) var(--r) 0 0; width:100%; max-width:520px; max-height:92vh; overflow-y:auto; padding:26px 22px 48px }
+.modal::-webkit-scrollbar { width:4px }
+.modal::-webkit-scrollbar-thumb { background:var(--border2); border-radius:2px }
+.mhandle { width:38px; height:4px; background:var(--border2); border-radius:2px; margin:0 auto 20px }
+.mtitle { font-family:'Cabinet Grotesk',sans-serif; font-size:21px; font-weight:800; margin-bottom:20px; letter-spacing:-0.4px; color:var(--text) }
+.frow { margin-bottom:14px }
+.flbl { font-size:11px; font-weight:700; color:var(--text3); text-transform:uppercase; letter-spacing:0.6px; display:block; margin-bottom:6px }
+.fgrid { display:grid; grid-template-columns:1fr 1fr; gap:12px }
+.chip { padding:7px 13px; border-radius:14px; border:1.5px solid var(--border2); background:var(--glass2); font-size:13px; font-weight:600; color:var(--text2); cursor:pointer; transition:var(--trans) }
+.chip.on { background:var(--coral); color:#fff; border-color:var(--coral) }
+.chip:hover:not(.on) { color:var(--text); background:var(--glass3) }
+.sprev { background:var(--bg3); border:1px solid var(--border); border-radius:var(--r3); padding:14px; margin-top:12px }
+.spr { display:flex; justify-content:space-between; font-size:13px; padding:3px 0; color:var(--text2) }
+.spr strong { color:var(--text); font-weight:700 }
+.spr.tot { border-top:1px solid var(--border); padding-top:9px; margin-top:5px }
+.spr.tot strong { color:var(--lime); font-size:15px }
+.epick { display:flex; gap:7px; flex-wrap:wrap; margin-top:6px }
+.eopt { font-size:24px; cursor:pointer; padding:5px 9px; border-radius:10px; border:2px solid transparent; transition:var(--trans) }
+.eopt:hover { background:var(--glass2) }
+.eopt.on { border-color:var(--coral); background:var(--glass2) }
+.mmbrs { display:flex; gap:7px; flex-wrap:wrap; margin-top:8px }
+.mchp { padding:4px 11px; border-radius:12px; font-size:12px; font-weight:700; display:inline-flex; align-items:center; gap:5px }
+.mchp span { opacity:0.55; cursor:pointer }
+.mchp span:hover { opacity:1 }
+
+/* ── TOAST ─────────────────────────────────────────────────── */
+.toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(100px); background:var(--bg3); border:1px solid var(--border2); color:var(--text); padding:12px 20px; border-radius:26px; font-size:13px; font-weight:600; z-index:400; transition:transform .3s cubic-bezier(.4,0,.2,1); pointer-events:none; white-space:nowrap; backdrop-filter:blur(12px); box-shadow:var(--shadow) }
+.toast.on { transform:translateX(-50%) translateY(0) }
+
+/* ── LOADING ───────────────────────────────────────────────── */
+.loading { display:flex; align-items:center; justify-content:center; padding:60px; color:var(--text3); gap:10px; font-size:14px }
+.spin { width:20px; height:20px; border:2px solid var(--border); border-top-color:var(--coral); border-radius:50%; animation:spin .7s linear infinite }
+@keyframes spin { to { transform:rotate(360deg) } }
+
+/* ── EMPTY ─────────────────────────────────────────────────── */
+.empty { text-align:center; padding:56px 20px }
+.ei { font-size:48px; margin-bottom:16px }
+.et { font-family:'Cabinet Grotesk',sans-serif; font-size:21px; font-weight:800; margin-bottom:8px; color:var(--text) }
+.es { color:var(--text2); font-size:14px; max-width:280px; margin:0 auto 24px }
+
+/* ── FORM HELPERS ──────────────────────────────────────────── */
+.alert { padding:10px 14px; border-radius:var(--r3); font-size:13px; margin-bottom:12px }
+.alert.err { background:rgba(255,71,87,0.1); border:1px solid rgba(255,71,87,0.3); color:var(--red) }
+.alert.ok  { background:rgba(57,224,123,0.1); border:1px solid rgba(57,224,123,0.3); color:var(--lime) }
+
+/* ── DROPDOWN ──────────────────────────────────────────────── */
+.dropdown { position:relative }
+.dropdown-menu {
+  position:absolute; top:calc(100% + 8px); right:0;
+  background:var(--bg2); border:1px solid var(--border2);
+  border-radius:var(--r2); padding:6px; min-width:180px;
+  box-shadow:var(--shadow); z-index:50; display:none;
+}
+.dropdown-menu.on { display:block }
+.dd-item { display:flex; align-items:center; gap:8px; padding:9px 12px; border-radius:var(--r3); font-size:13px; font-weight:500; color:var(--text2); cursor:pointer; transition:var(--trans) }
+.dd-item:hover { background:var(--glass2); color:var(--text) }
+.dd-item.danger:hover { background:rgba(255,71,87,0.1); color:var(--red) }
+.dd-sep { height:1px; background:var(--border); margin:4px 0 }
+
+/* ── ANIMATIONS ────────────────────────────────────────────── */
+@keyframes fu { from { opacity:0; transform:translateY(12px) } to { opacity:1; transform:translateY(0) } }
+.tc,.mcard,.member-card { animation:fu .28s ease both }
+.tc:nth-child(2),.mcard:nth-child(2) { animation-delay:.04s }
+.tc:nth-child(3),.mcard:nth-child(3) { animation-delay:.08s }
+.mcard:nth-child(4) { animation-delay:.12s }
+
+/* ── RESPONSIVE ────────────────────────────────────────────── */
+@media(max-width:600px) {
+  .page { padding:18px 14px }
+  .topbar { padding:0 14px }
+  .nav-center { display:none }
+  .fgrid { grid-template-columns:1fr }
+}
+</style>
+</head>
+<body>
+<div class="blob b1"></div>
+<div class="blob b2"></div>
+<div class="blob b3"></div>
+
+<!-- ╔══════════════════════════════════════════════════════╗ -->
+<!-- ║  AUTH VIEW                                           ║ -->
+<!-- ╚══════════════════════════════════════════════════════╝ -->
+<div class="view on" id="view-auth">
+  <div class="auth-wrap">
+    <div class="auth-card">
+      <div class="auth-logo">
+        <div class="auth-logo-mark">✈</div>
+        <div class="auth-logo-name">Split<em>Trip</em></div>
+        <div class="auth-tagline">Viaja en grupo. Sin dramas de dinero.</div>
+      </div>
+      <div id="auth-alert"></div>
+      <div class="frow">
+        <label class="flbl">Tu correo electrónico</label>
+        <input type="email" id="auth-email" placeholder="nombre@correo.com" autocomplete="email">
+      </div>
+      <button class="btn-p" style="width:100%;padding:13px;font-size:15px;border-radius:12px" id="auth-btn" onclick="handleAuth()">
+        Continuar con email ✉️
+      </button>
+      <p style="font-size:12px;color:var(--text3);text-align:center;margin-top:14px">
+        Te enviamos un enlace mágico · Sin contraseña · Gratis
+      </p>
+      <div class="join-section">
+        <div class="join-title">¿Tienes un código de invitación?</div>
+        <div style="display:flex;gap:8px">
+          <input type="text" id="join-code" placeholder="Ej: ABC12345" style="flex:1;text-transform:uppercase;font-family:monospace;letter-spacing:1px">
+          <button class="btn-g" onclick="handleJoinCode()">Unirse</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ╔══════════════════════════════════════════════════════╗ -->
+<!-- ║  MAIN APP (topbar + pages)                           ║ -->
+<!-- ╚══════════════════════════════════════════════════════╝ -->
+<div class="view" id="view-app">
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="logo"><div class="logo-mark">✈</div>Split<em>Trip</em></div>
+    <div class="nav-center">
+      <button class="npill on" onclick="showMain('trips')">Mis viajes</button>
+      <button class="npill" onclick="showMain('market')">Marketplace</button>
+    </div>
+    <div class="nav-right">
+      <button class="theme-btn" id="theme-toggle" onclick="toggleTheme()">☀️</button>
+      <div class="dropdown">
+        <div class="avatar-btn" id="topbar-avatar" onclick="toggleDd()"></div>
+        <div class="dropdown-menu" id="dd-menu">
+          <div class="dd-item" onclick="showMain('profile')">👤 Mi perfil</div>
+          <div class="dd-sep"></div>
+          <div class="dd-item danger" onclick="doSignOut()">Cerrar sesión</div>
+        </div>
+      </div>
+      <button class="cta" onclick="openM('m-nt')">+ Nuevo viaje</button>
+    </div>
+  </div>
+
+  <!-- PAGE: TRIPS -->
+  <div id="main-trips" class="main-page">
+    <div class="page">
+      <div class="ph"><div class="pt">Mis <em>viajes</em></div><button class="btn-p" onclick="openM('m-nt')">+ Nuevo viaje</button></div>
+      <div id="trips-loading" class="loading"><div class="spin"></div> Cargando viajes...</div>
+      <div class="tgrid" id="tgrid" style="display:none"></div>
+    </div>
+  </div>
+
+  <!-- PAGE: TRIP DETAIL -->
+  <div id="main-det" class="main-page" style="display:none">
+    <div class="page">
+      <button class="back-btn" onclick="showMain('trips')">← Mis viajes</button>
+      <div class="thero" id="thero"></div>
+      <div class="tabs">
+        <button class="tb on" onclick="showT('gastos',this)">💸 Gastos</button>
+        <button class="tb" onclick="showT('bal',this)">⚖️ Balances</button>
+        <button class="tb" onclick="showT('itin',this)">🗓 Itinerario</button>
+        <button class="tb" onclick="showT('miembros',this)">👥 Miembros</button>
+        <button class="tb" onclick="showT('chat',this)">💬 Chat</button>
+      </div>
+
+      <div class="tp on" id="t-gastos">
+        <div class="srow" id="srow"></div>
+        <div class="ph" style="margin-bottom:14px">
+          <div style="font-weight:700;font-size:15px;color:var(--text)">Registro de gastos</div>
+          <button class="btn-p" onclick="openM('m-ae')">+ Añadir gasto</button>
+        </div>
+        <div class="elist" id="elist"></div>
+      </div>
+
+      <div class="tp" id="t-bal">
+        <div class="bgrid" id="bgrid"></div>
+        <div style="font-weight:700;font-size:15px;margin-bottom:14px;color:var(--text)">¿Quién paga a quién?</div>
+        <div class="slist" id="slist"></div>
+      </div>
+
+      <div class="tp" id="t-itin">
+        <div class="ph" style="margin-bottom:14px">
+          <div style="font-weight:700;font-size:15px;color:var(--text)">Itinerario del grupo</div>
+          <button class="btn-g" onclick="openM('m-ai')">+ Añadir actividad</button>
+        </div>
+        <div id="itin-el"></div>
+      </div>
+
+      <div class="tp" id="t-miembros">
+        <div class="ph" style="margin-bottom:14px">
+          <div style="font-weight:700;font-size:15px;color:var(--text)">Miembros del viaje</div>
+        </div>
+        <div class="invite-row">
+          <input type="email" id="invite-email" placeholder="Invitar por correo electrónico...">
+          <button class="btn-p" onclick="doInvite()">Invitar ✉️</button>
+        </div>
+        <div id="members-alert"></div>
+        <div class="members-grid" id="members-grid"></div>
+        <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border)">
+          <div style="font-size:12px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Código de invitación</div>
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+            <span class="invite-code" id="invite-code-display" onclick="copyCode()"></span>
+            <span style="font-size:12px;color:var(--text3)">Comparte este código para que se unan</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="tp" id="t-chat">
+        <div class="cwrap">
+          <div class="cmsgs" id="cmsgs"></div>
+          <div class="cinp">
+            <input type="text" id="cinput" placeholder="Escribe un mensaje..." onkeydown="if(event.key==='Enter')sendMsg()">
+            <button class="sbtn" onclick="sendMsg()">↑</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAGE: MARKETPLACE -->
+  <div id="main-market" class="main-page" style="display:none">
+    <div class="page">
+      <div class="ph">
+        <div class="pt">Market<em>place</em></div>
+        <div style="font-size:13px;color:var(--text2)">Para organizar tu salida o viaje</div>
+      </div>
+      <div style="background:rgba(255,188,64,0.1);border:1px solid rgba(255,188,64,0.3);border-radius:var(--r2);padding:14px 18px;margin-bottom:22px;display:flex;align-items:center;gap:12px">
+        <span style="font-size:20px">🚀</span>
+        <div>
+          <div style="font-weight:700;font-size:14px;color:var(--amber)">Marketplace en construcción</div>
+          <div style="font-size:13px;color:var(--text2);margin-top:2px">Las reservas reales llegarán pronto. Por ahora, añade actividades al itinerario y divide los gastos manualmente.</div>
+        </div>
+      </div>
+      <div class="mf">
+        <button class="mfb on" onclick="fltM('all',this)">Todos</button>
+        <button class="mfb" onclick="fltM('vuelo',this)">✈️ Vuelos</button>
+        <button class="mfb" onclick="fltM('hotel',this)">🏨 Hoteles</button>
+        <button class="mfb" onclick="fltM('tour',this)">🗺 Tours</button>
+        <button class="mfb" onclick="fltM('aventura',this)">🧗 Aventuras</button>
+        <button class="mfb" onclick="fltM('restaurante',this)">🍽 Restaurantes</button>
+      </div>
+      <div class="mgrid" id="mgrid"></div>
+    </div>
+  </div>
+
+  <!-- PAGE: PROFILE -->
+  <div id="main-profile" class="main-page" style="display:none">
+    <div class="page">
+      <div class="ph"><div class="pt">Mi <em>perfil</em></div></div>
+      <div class="profile-card">
+        <div class="profile-av-big" id="profile-av-big"></div>
+        <div style="text-align:center;margin-bottom:24px">
+          <div style="font-size:18px;font-weight:800;color:var(--text)" id="profile-name-disp"></div>
+          <div style="font-size:13px;color:var(--text2);margin-top:4px" id="profile-email-disp"></div>
+        </div>
+        <div id="profile-alert"></div>
+        <div class="frow"><label class="flbl">Nombre</label><input type="text" id="p-name" placeholder="Tu nombre"></div>
+        <div class="frow">
+          <label class="flbl">Color de avatar</label>
+          <div class="color-pick" id="color-pick"></div>
+        </div>
+        <button class="btn-p" style="width:100%;padding:12px;border-radius:12px;margin-top:6px" onclick="saveProfile()">Guardar cambios</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════ MODALS ═══════════════════════════════ -->
+
+<!-- NEW TRIP -->
+<div class="mov" id="m-nt" onclick="clov(event,'m-nt')">
+  <div class="modal">
+    <div class="mhandle"></div>
+    <div class="mtitle">Crear nuevo viaje</div>
+    <div id="nt-alert"></div>
+    <div class="frow"><label class="flbl">Nombre</label><input type="text" id="tn" placeholder="Ej: Ibiza verano 2025"></div>
+    <div class="frow"><label class="flbl">Destino</label><input type="text" id="td" placeholder="Ej: Ibiza, España"></div>
+    <div class="fgrid">
+      <div class="frow"><label class="flbl">Inicio</label><input type="date" id="ts"></div>
+      <div class="frow"><label class="flbl">Fin</label><input type="date" id="te"></div>
+    </div>
+    <div class="frow">
+      <label class="flbl">Invitar miembros (correos)</label>
+      <div style="display:flex;gap:8px">
+        <input type="email" id="nt-invite-in" placeholder="email@ejemplo.com" style="flex:1" onkeydown="if(event.key==='Enter')addNTInvite()">
+        <button class="btn-g" onclick="addNTInvite()" style="flex-shrink:0">+ Add</button>
+      </div>
+      <div class="mmbrs" id="nt-invite-list" style="margin-top:8px"></div>
+    </div>
+    <div class="frow"><label class="flbl">Emoji del viaje</label>
+      <div class="epick" id="epick">
+        <span class="eopt on" onclick="selE(this,'🏖')">🏖</span><span class="eopt" onclick="selE(this,'🏔')">🏔</span>
+        <span class="eopt" onclick="selE(this,'🌆')">🌆</span><span class="eopt" onclick="selE(this,'🎉')">🎉</span>
+        <span class="eopt" onclick="selE(this,'🌍')">🌍</span><span class="eopt" onclick="selE(this,'🛺')">🛺</span>
+        <span class="eopt" onclick="selE(this,'🌮')">🌮</span><span class="eopt" onclick="selE(this,'⛷')">⛷</span>
+        <span class="eopt" onclick="selE(this,'🐪')">🐪</span><span class="eopt" onclick="selE(this,'🍜')">🍜</span>
+      </div>
+    </div>
+    <button class="btn-p" style="width:100%;padding:14px;font-size:15px;border-radius:12px;margin-top:4px" onclick="createTrip()">Crear viaje 🚀</button>
+  </div>
+</div>
+
+<!-- ADD EXPENSE -->
+<div class="mov" id="m-ae" onclick="clov(event,'m-ae')">
+  <div class="modal">
+    <div class="mhandle"></div>
+    <div class="mtitle">Añadir gasto</div>
+    <div class="frow"><label class="flbl">Descripción</label><input type="text" id="ed" placeholder="Ej: Cena en el chiringuito"></div>
+    <div class="fgrid">
+      <div class="frow"><label class="flbl">Importe (€)</label><input type="number" id="ea" placeholder="0.00" step="0.01" oninput="updSp()"></div>
+      <div class="frow"><label class="flbl">Categoría</label>
+        <select id="ec">
+          <option value="🍽">🍽 Restaurante</option>
+          <option value="🏨">🏨 Alojamiento</option>
+          <option value="✈️">✈️ Transporte</option>
+          <option value="🎉">🎉 Actividad</option>
+          <option value="🛒">🛒 Compras</option>
+          <option value="🚗">🚗 Alquiler</option>
+          <option value="💊">💊 Otro</option>
+        </select>
+      </div>
+    </div>
+    <div class="frow"><label class="flbl">¿Quién pagó?</label><select id="ep2"></select></div>
+    <div class="frow"><label class="flbl">Fecha</label><input type="date" id="edate"></div>
+    <div class="frow">
+      <label class="flbl">Dividir entre</label>
+      <div style="display:flex;flex-wrap:wrap;gap:7px;margin-top:4px" id="esplt"></div>
+    </div>
+    <div class="sprev" id="sprev"></div>
+    <button class="btn-p" style="width:100%;padding:13px;font-size:15px;border-radius:12px;margin-top:12px" onclick="addExpense()">Guardar gasto</button>
+  </div>
+</div>
+
+<!-- ADD ITINERARY ITEM -->
+<div class="mov" id="m-ai" onclick="clov(event,'m-ai')">
+  <div class="modal">
+    <div class="mhandle"></div>
+    <div class="mtitle">Añadir actividad</div>
+    <div class="frow"><label class="flbl">Actividad</label><input type="text" id="in2" placeholder="Ej: Visita al Prado"></div>
+    <div class="fgrid">
+      <div class="frow"><label class="flbl">Día</label><input type="number" id="iday" value="1" min="1"></div>
+      <div class="frow"><label class="flbl">Hora</label><input type="time" id="itime" value="10:00"></div>
+    </div>
+    <div class="frow"><label class="flbl">Icono</label>
+      <div class="epick" id="ipick" style="margin-top:6px">
+        <span class="eopt on" onclick="selI(this,'🍽')">🍽</span><span class="eopt" onclick="selI(this,'🏛')">🏛</span>
+        <span class="eopt" onclick="selI(this,'🚌')">🚌</span><span class="eopt" onclick="selI(this,'🏊')">🏊</span>
+        <span class="eopt" onclick="selI(this,'🎭')">🎭</span><span class="eopt" onclick="selI(this,'🛍')">🛍</span>
+        <span class="eopt" onclick="selI(this,'⛵')">⛵</span><span class="eopt" onclick="selI(this,'🎵')">🎵</span>
+        <span class="eopt" onclick="selI(this,'✈️')">✈️</span><span class="eopt" onclick="selI(this,'🏨')">🏨</span>
+      </div>
+    </div>
+    <div class="frow"><label class="flbl">Coste estimado (€)</label><input type="number" id="ic" placeholder="0 = gratis" step="0.01"></div>
+    <div class="frow"><label class="flbl">Notas (opcional)</label><textarea id="inotes" rows="2" placeholder="Detalles, dirección..."></textarea></div>
+    <button class="btn-p" style="width:100%;padding:13px;font-size:15px;border-radius:12px;margin-top:4px" onclick="addItem()">Añadir al itinerario</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- ═══════════════════ SCRIPT ═══════════════════════════════ -->
+<script type="module">
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+// ── CONFIG — replace with your Supabase project values ───────
+const SURL = 'https://YOUR_PROJECT.supabase.co';
+const SKEY = 'YOUR_ANON_KEY';
+const sb   = createClient(SURL, SKEY);
+
+// ── LOCAL DEMO MODE (active when no Supabase configured) ──────
+const DEMO = SURL.includes('YOUR_PROJECT');
+
+// ── STATE ─────────────────────────────────────────────────────
+const ST = {
+  user: null, profile: null,
+  trips: [], cur: null,
+  members: [], expenses: [], itin: [], msgs: [],
+  emoji: '🏖', icon: '🍽',
+  ntInvites: [], splitSel: [],
+  pendingJoin: null,
+};
+
+const COLORS = ['#FF5C3A','#39E07B','#38BDF8','#A78BFA','#FFBC40','#F472B6','#34D399','#FB923C'];
+const PALETTE = ['#FF5C3A','#39E07B','#38BDF8','#A78BFA','#FFBC40','#F472B6','#34D399','#FB923C'];
+
+// ── THEME ─────────────────────────────────────────────────────
+window.toggleTheme = () => {
+  const cur = document.documentElement.getAttribute('data-theme');
+  const next = cur === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', next);
+  localStorage.setItem('st_theme', next);
+  document.getElementById('theme-toggle').textContent = next === 'dark' ? '☀️' : '🌙';
+};
+// Apply saved theme
+const saved = localStorage.getItem('st_theme') || 'dark';
+document.documentElement.setAttribute('data-theme', saved);
+document.getElementById('theme-toggle').textContent = saved === 'dark' ? '☀️' : '🌙';
+
+// ── BOOT ──────────────────────────────────────────────────────
+async function boot() {
+  // Check for magic link or invite token in URL
+  const params = new URLSearchParams(window.location.search);
+  const joinToken = params.get('join');
+  const joinCode  = params.get('code');
+  if (joinToken) ST.pendingJoin = { type: 'token', value: joinToken };
+  if (joinCode)  ST.pendingJoin = { type: 'code',  value: joinCode };
+
+  if (DEMO) { bootDemo(); return; }
+
+  const { data: { session } } = await sb.auth.getSession();
+  if (session) {
+    await loadAndShowApp(session.user);
+  } else {
+    showView('auth');
+  }
+
+  sb.auth.onAuthStateChange(async (event, session) => {
+    if (event === 'SIGNED_IN' && session) await loadAndShowApp(session.user);
+    if (event === 'SIGNED_OUT') { showView('auth'); }
+  });
+}
+
+// ── DEMO BOOT ─────────────────────────────────────────────────
+function bootDemo() {
+  ST.user = { id: 'demo-user', email: 'tu@email.com' };
+  ST.profile = { id: 'demo-user', email: 'tu@email.com', name: 'Tú', avatar_color: '#FF5C3A' };
+  ST.trips = [
+    { id:'t1', name:'Ibiza Verano', destination:'Ibiza, España', emoji:'🏖', status:'active', start_date:'2025-07-15', end_date:'2025-07-22', invite_code:'IBIZA25X', total_spent:2520, expense_count:5, member_count:4 },
+    { id:'t2', name:'Ruta Marruecos', destination:'Marrakech → Chefchaouen', emoji:'🌍', status:'planning', start_date:'2025-09-05', end_date:'2025-09-15', invite_code:'MARRUEC1', total_spent:450, expense_count:1, member_count:3 },
+  ];
+  showView('app');
+  updateTopbarAvatar();
+  renderTrips();
+  showMain('trips');
+}
+
+async function loadAndShowApp(user) {
+  ST.user = user;
+  const { data } = await sb.from('profiles').select('*').eq('id', user.id).single();
+  ST.profile = data;
+  showView('app');
+  updateTopbarAvatar();
+  await loadTrips();
+  showMain('trips');
+
+  // Handle pending join after login
+  if (ST.pendingJoin) {
+    if (ST.pendingJoin.type === 'token') await doJoinToken(ST.pendingJoin.value);
+    if (ST.pendingJoin.type === 'code')  await doJoinCode(ST.pendingJoin.value);
+    ST.pendingJoin = null;
+    window.history.replaceState({}, '', window.location.pathname);
+  }
+}
+
+// ── VIEW HELPERS ──────────────────────────────────────────────
+window.showView = (name) => {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('on'));
+  document.getElementById('view-'+name)?.classList.add('on');
+};
+window.showMain = (name) => {
+  document.querySelectorAll('.main-page').forEach(p => p.style.display = 'none');
+  document.getElementById('main-'+name).style.display = 'block';
+  document.querySelectorAll('.npill').forEach(b => b.classList.remove('on'));
+  const map = { trips:'Mis viajes', market:'Marketplace' };
+  document.querySelectorAll('.npill').forEach(b => { if (b.textContent === map[name]) b.classList.add('on'); });
+  if (name === 'market') renderMkt();
+  if (name === 'profile') loadProfilePage();
+};
+function showT(id, btn) {
+  document.querySelectorAll('.tp').forEach(p => p.classList.remove('on'));
+  document.querySelectorAll('.tb').forEach(b => b.classList.remove('on'));
+  document.getElementById('t-'+id)?.classList.add('on');
+  btn.classList.add('on');
+  if (id === 'bal')      renderBal();
+  if (id === 'itin')     renderItin();
+  if (id === 'miembros') renderMembers();
+  if (id === 'chat')     { loadMsgs(); }
+}
+window.showT = showT;
+
+// ── AVATAR HELPERS ────────────────────────────────────────────
+function initials(name, email) {
+  const n = name || email || '?';
+  return n.split(' ').map(w => w[0]).join('').toUpperCase().slice(0,2);
+}
+function updateTopbarAvatar() {
+  const btn = document.getElementById('topbar-avatar');
+  const p = ST.profile;
+  btn.textContent = initials(p?.name, p?.email);
+  btn.style.cssText = `background:${p?.avatar_color||'#FF5C3A'}22;color:${p?.avatar_color||'#FF5C3A'};border-color:${p?.avatar_color||'#FF5C3A'}44;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;border-width:2px;border-style:solid;cursor:pointer`;
+}
+window.toggleDd = () => document.getElementById('dd-menu').classList.toggle('on');
+document.addEventListener('click', e => {
+  if (!e.target.closest('.dropdown')) document.getElementById('dd-menu').classList.remove('on');
+});
+
+// ── AUTH ──────────────────────────────────────────────────────
+window.handleAuth = async () => {
+  const email = document.getElementById('auth-email').value.trim();
+  const alert = document.getElementById('auth-alert');
+  const btn   = document.getElementById('auth-btn');
+  if (!email) { alert.innerHTML = '<div class="alert err">Introduce tu correo electrónico</div>'; return; }
+
+  if (DEMO) {
+    alert.innerHTML = '<div class="alert ok">✅ Demo: iniciando sesión...</div>';
+    setTimeout(() => bootDemo(), 1000);
+    return;
+  }
+
+  btn.textContent = 'Enviando...';
+  const { error } = await sb.auth.signInWithOtp({ email, options: { emailRedirectTo: location.origin } });
+  btn.textContent = 'Continuar con email ✉️';
+  if (error) { alert.innerHTML = `<div class="alert err">${error.message}</div>`; return; }
+  alert.innerHTML = '<div class="alert ok">✅ ¡Enlace enviado! Revisa tu correo y haz clic en el enlace para entrar.</div>';
+};
+
+window.handleJoinCode = async () => {
+  const code = document.getElementById('join-code').value.trim().toUpperCase();
+  if (!code) return;
+  if (DEMO) { toast('💡 Inicia sesión primero para unirte a un viaje'); return; }
+  const email = document.getElementById('auth-email').value.trim();
+  if (!email) { document.getElementById('auth-alert').innerHTML = '<div class="alert err">Primero introduce tu email para iniciar sesión</div>'; return; }
+  ST.pendingJoin = { type: 'code', value: code };
+  handleAuth();
+};
+
+window.doSignOut = async () => {
+  if (!DEMO) await sb.auth.signOut();
+  ST.user = ST.profile = null;
+  showView('auth');
+};
+
+async function doJoinCode(code) {
+  const { data: trip } = await sb.from('trips').select('*').eq('invite_code', code).single();
+  if (!trip) { toast('❌ Código inválido'); return; }
+  await sb.from('trip_members').upsert({ trip_id: trip.id, user_id: ST.user.id, role: 'member' }, { onConflict: 'trip_id,user_id' });
+  toast(`✅ ¡Te has unido a "${trip.name}"!`);
+  await loadTrips();
+}
+
+async function doJoinToken(token) {
+  const { data: inv } = await sb.from('trip_invitations').select('*, trips(*)').eq('token', token).eq('status','pending').single();
+  if (!inv) { toast('❌ Invitación inválida o expirada'); return; }
+  await sb.from('trip_members').upsert({ trip_id: inv.trip_id, user_id: ST.user.id, role: 'member' }, { onConflict: 'trip_id,user_id' });
+  await sb.from('trip_invitations').update({ status: 'accepted' }).eq('id', inv.id);
+  toast(`✅ ¡Te has unido a "${inv.trips.name}"!`);
+  await loadTrips();
+}
+
+// ── TRIPS ─────────────────────────────────────────────────────
+async function loadTrips() {
+  if (DEMO) { renderTrips(); return; }
+  const { data: mrows } = await sb.from('trip_members').select('trip_id').eq('user_id', ST.user.id);
+  if (!mrows?.length) { ST.trips = []; renderTrips(); return; }
+  const ids = mrows.map(r => r.trip_id);
+  const { data } = await sb.from('trip_summary').select('*').in('id', ids).order('created_at', { ascending: false });
+  ST.trips = data || [];
+  renderTrips();
+}
+
+function renderTrips() {
+  const loading = document.getElementById('trips-loading');
+  const grid    = document.getElementById('tgrid');
+  loading.style.display = 'none';
+  grid.style.display = 'grid';
+
+  if (!ST.trips.length) {
+    grid.innerHTML = `<div class="empty" style="grid-column:1/-1"><div class="ei">✈️</div><div class="et">Sin viajes aún</div><div class="es">Crea tu primer viaje grupal y empieza la aventura</div><button class="btn-p" onclick="openM('m-nt')">+ Crear primer viaje</button></div>`;
+    return;
+  }
+  grid.innerHTML = ST.trips.map(t => {
+    const statusMap = { active:'sp', planning:'pp', done:'dp' };
+    const statusLbl = { active:'Activo', planning:'Planeando', done:'Finalizado' };
+    return `<div class="tc" onclick="openTrip('${t.id}')">
+      <span class="tc-badge ${statusMap[t.status]||'pp'}">${statusLbl[t.status]||'Planeando'}</span>
+      <span class="tc-emoji">${t.emoji}</span>
+      <div class="tc-name">${t.name}</div>
+      <div class="tc-dest">📍 ${t.destination}</div>
+      <div class="tc-nums">
+        <div class="tcn"><div class="tcn-v">${fmt(t.total_spent||0)}</div><div class="tcn-l">Total</div></div>
+        <div class="tcn"><div class="tcn-v">${t.expense_count||0}</div><div class="tcn-l">Gastos</div></div>
+        <div class="tcn"><div class="tcn-v">${t.member_count||1}</div><div class="tcn-l">Personas</div></div>
+      </div>
+      <div class="tc-avs">
+        ${Array.from({length: Math.min(t.member_count||1,5)},(_,i)=>`<div class="avc" style="background:${COLORS[i%COLORS.length]}22;color:${COLORS[i%COLORS.length]};border-color:${COLORS[i%COLORS.length]}44;font-size:10px;font-weight:800;">${String.fromCharCode(65+i)}</div>`).join('')}
+        <span style="font-size:12px;color:var(--text3);margin-left:8px">${fd(t.start_date)}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function openTrip(id) {
+  const trip = ST.trips.find(t => t.id === id);
+  if (!trip) return;
+
+  showMain('det');
+  document.querySelectorAll('.tb').forEach((b,i) => b.classList.toggle('on', i===0));
+  document.querySelectorAll('.tp').forEach((p,i) => p.classList.toggle('on', i===0));
+
+  if (DEMO) {
+    ST.cur = { ...trip, invite_code: trip.invite_code || 'DEMO1234' };
+    ST.members = [
+      { user_id:'demo-user', role:'owner', profiles:{ id:'demo-user', name:'Tú', email:'tu@email.com', avatar_color:'#FF5C3A' } },
+      { user_id:'u2', role:'member', profiles:{ id:'u2', name:'Carlos', email:'carlos@email.com', avatar_color:'#39E07B' } },
+      { user_id:'u3', role:'member', profiles:{ id:'u3', name:'Ana', email:'ana@email.com', avatar_color:'#38BDF8' } },
+      { user_id:'u4', role:'member', profiles:{ id:'u4', name:'Marta', email:'marta@email.com', avatar_color:'#A78BFA' } },
+    ];
+    ST.expenses = id === 't1' ? [
+      { id:'e1', description:'Airbnb Casa Cala', amount:1200, category:'🏨', paid_by:'u2', date:'2025-07-15',
+        profiles: ST.members[1].profiles,
+        expense_splits:[{user_id:'demo-user',amount:300},{user_id:'u2',amount:300},{user_id:'u3',amount:300},{user_id:'u4',amount:300}]},
+      { id:'e2', description:'Vuelos Iberia x4', amount:640, category:'✈️', paid_by:'demo-user', date:'2025-07-10',
+        profiles: ST.members[0].profiles,
+        expense_splits:[{user_id:'demo-user',amount:160},{user_id:'u2',amount:160},{user_id:'u3',amount:160},{user_id:'u4',amount:160}]},
+      { id:'e3', description:'Cena Es Torrent', amount:220, category:'🍽', paid_by:'u3', date:'2025-07-16',
+        profiles: ST.members[2].profiles,
+        expense_splits:[{user_id:'demo-user',amount:55},{user_id:'u2',amount:55},{user_id:'u3',amount:55},{user_id:'u4',amount:55}]},
+      { id:'e4', description:'Entrada Ushuaïa', amount:280, category:'🎉', paid_by:'u4', date:'2025-07-17',
+        profiles: ST.members[3].profiles,
+        expense_splits:[{user_id:'demo-user',amount:93.33},{user_id:'u2',amount:93.33},{user_id:'u3',amount:93.34}]},
+      { id:'e5', description:'Alquiler coches', amount:180, category:'🚗', paid_by:'demo-user', date:'2025-07-15',
+        profiles: ST.members[0].profiles,
+        expense_splits:[{user_id:'demo-user',amount:45},{user_id:'u2',amount:45},{user_id:'u3',amount:45},{user_id:'u4',amount:45}]},
+    ] : [
+      { id:'e6', description:'Riad Medina 5 noches', amount:450, category:'🏨', paid_by:'u2', date:'2025-08-01',
+        profiles:{ name:'Luis', avatar_color:'#39E07B' },
+        expense_splits:[{user_id:'demo-user',amount:150},{user_id:'u2',amount:150},{user_id:'u3',amount:150}]},
+    ];
+    ST.itin = id === 't1' ? [
+      {id:'i1',day_number:1,start_time:'14:00',icon:'✈️',name:'Vuelo Madrid-Ibiza',cost_estimate:0},
+      {id:'i2',day_number:1,start_time:'17:00',icon:'🏨',name:'Check-in Cala Vadella',cost_estimate:0},
+      {id:'i3',day_number:1,start_time:'21:00',icon:'🍽',name:'Cena en el puerto',cost_estimate:55},
+      {id:'i4',day_number:2,start_time:'10:00',icon:'🏊',name:'Playa Cala Bassa',cost_estimate:0},
+      {id:'i5',day_number:2,start_time:'23:00',icon:'🎉',name:'Ushuaïa Beach Club',cost_estimate:70},
+    ] : [];
+    ST.msgs = [
+      { id:'m1', user_id:'u2', content:'¿Cuándo quedamos para planear? 🌴', created_at: new Date(Date.now()-86400000*3).toISOString(), profiles: ST.members[1].profiles },
+      { id:'m2', user_id:'demo-user', content:'Yo propongo la segunda semana 🙌', created_at: new Date(Date.now()-86400000*2).toISOString(), profiles: ST.members[0].profiles },
+      { id:'m3', user_id:'u3', content:'Me apunto! He reservado el Airbnb', created_at: new Date(Date.now()-86400000).toISOString(), profiles: ST.members[2].profiles },
+    ];
+    renderHero(); renderGastos(); renderChat();
+    return;
+  }
+
+  // Real Supabase load
+  const { data: tripFull } = await sb.from('trips').select('*').eq('id', id).single();
+  ST.cur = tripFull;
+  const [mRes, eRes, iRes, msgRes] = await Promise.all([
+    sb.from('trip_members').select('*, profiles(*)').eq('trip_id', id),
+    sb.from('expenses').select('*, profiles!paid_by(id,name,email,avatar_color), expense_splits(user_id,amount,is_paid)').eq('trip_id', id).order('date',{ascending:false}),
+    sb.from('itinerary_items').select('*').eq('trip_id', id).order('day_number').order('start_time'),
+    sb.from('messages').select('*, profiles(id,name,email,avatar_color)').eq('trip_id', id).order('created_at').limit(100),
+  ]);
+  ST.members  = mRes.data   || [];
+  ST.expenses = eRes.data   || [];
+  ST.itin     = iRes.data   || [];
+  ST.msgs     = msgRes.data || [];
+
+  renderHero(); renderGastos(); renderChat();
+  subscribeChat();
+}
+window.openTrip = openTrip;
+
+// ── CREATE TRIP ───────────────────────────────────────────────
+let ntInvites = [];
+window.addNTInvite = () => {
+  const inp = document.getElementById('nt-invite-in');
+  const em = inp.value.trim().toLowerCase();
+  if (!em || ntInvites.includes(em)) { inp.value=''; return; }
+  ntInvites.push(em);
+  inp.value = '';
+  renderNTInvites();
+};
+function renderNTInvites() {
+  document.getElementById('nt-invite-list').innerHTML = ntInvites.map((e,i) =>
+    `<div class="mchp" style="background:${COLORS[i%COLORS.length]}22;color:${COLORS[i%COLORS.length]}">${e}<span onclick="ntInvites.splice(${i},1);renderNTInvites()">×</span></div>`
+  ).join('');
+}
+window.selE = (el, e) => { ST.emoji = e; document.querySelectorAll('#epick .eopt').forEach(x=>x.classList.remove('on')); el.classList.add('on'); };
+
+window.createTrip = async () => {
+  const name = document.getElementById('tn').value.trim();
+  const dest = document.getElementById('td').value.trim();
+  const alert = document.getElementById('nt-alert');
+  if (!name || !dest) { alert.innerHTML='<div class="alert err">Nombre y destino son obligatorios</div>'; return; }
+
+  if (DEMO) {
+    const t = { id: 'trip-'+Date.now(), name, destination:dest, emoji:ST.emoji, status:'planning', start_date:document.getElementById('ts').value, end_date:document.getElementById('te').value, invite_code:Math.random().toString(36).slice(2,10).toUpperCase(), total_spent:0, expense_count:0, member_count:1 };
+    ST.trips.unshift(t);
+    closeM('m-nt'); renderTrips(); toast(`🚀 "${name}" creado`);
+    setTimeout(() => openTrip(t.id), 300);
+    return;
+  }
+
+  const { data: trip, error } = await sb.from('trips').insert({ name, destination:dest, emoji:ST.emoji, start_date:document.getElementById('ts').value||null, end_date:document.getElementById('te').value||null, owner_id:ST.user.id, status:'planning' }).select().single();
+  if (error) { alert.innerHTML=`<div class="alert err">${error.message}</div>`; return; }
+  await sb.from('trip_members').insert({ trip_id:trip.id, user_id:ST.user.id, role:'owner' });
+
+  // Send invites
+  for (const email of ntInvites) {
+    const { data: inv } = await sb.from('trip_invitations').insert({ trip_id:trip.id, email, invited_by:ST.user.id }).select().single();
+    if (inv && typeof emailjs !== 'undefined') {
+      emailjs.send('YOUR_SERVICE_ID','YOUR_TEMPLATE_ID',{ to_email:email, trip_name:trip.name, trip_dest:dest, inviter:ST.profile?.name||ST.user.email, join_url:`${location.origin}?join=${inv.token}`, trip_emoji:ST.emoji }).catch(()=>{});
+    }
+  }
+  ntInvites = [];
+  closeM('m-nt');
+  await loadTrips();
+  toast(`🚀 "${name}" creado`);
+  setTimeout(() => openTrip(trip.id), 300);
+};
+
+// ── HERO ──────────────────────────────────────────────────────
+function renderHero() {
+  const t = ST.cur;
+  const smap = { active:'sp', planning:'pp', done:'dp' };
+  const slbl = { active:'Activo', planning:'Planeando', done:'Finalizado' };
+  document.getElementById('thero').innerHTML = `
+    <div class="thero-bg"></div>
+    <div class="thero-c">
+      <div class="thero-emoji">${t.emoji}</div>
+      <div class="thero-name">${t.name}</div>
+      <div class="thero-sub">📍 ${t.destination || t.dest} &nbsp;·&nbsp; 📅 ${fd(t.start_date)} → ${fd(t.end_date)}</div>
+      <div class="thero-tags">
+        <span class="tc-badge ${smap[t.status]||'pp'}">${slbl[t.status]||'Planeando'}</span>
+        ${ST.members.map((m,i) => `<span class="tag" style="background:${(m.profiles?.avatar_color||COLORS[i%COLORS.length])}22;color:${m.profiles?.avatar_color||COLORS[i%COLORS.length]};border-color:${m.profiles?.avatar_color||COLORS[i%COLORS.length]}33">${m.profiles?.name||m.profiles?.email?.split('@')[0]||'?'}</span>`).join('')}
+        <span class="invite-code" onclick="copyCode()" title="Clic para copiar">📋 ${t.invite_code}</span>
+      </div>
+    </div>`;
+}
+
+window.copyCode = () => {
+  navigator.clipboard.writeText(ST.cur?.invite_code || '').then(() => toast('📋 Código copiado'));
+};
+
+// ── GASTOS ────────────────────────────────────────────────────
+function renderGastos() {
+  const total = ST.expenses.reduce((s,e) => s + Number(e.amount), 0);
+  const pp    = ST.members.length ? total / ST.members.length : 0;
+  const pending = calcSettleTotal();
+
+  document.getElementById('srow').innerHTML = `
+    <div class="sbox"><div class="sbox-l">Total gastado</div><div class="sbox-v cv">${fmt(total)}</div><div class="sbox-s">${ST.expenses.length} gastos</div></div>
+    <div class="sbox"><div class="sbox-l">Por persona</div><div class="sbox-v av">${fmt(pp)}</div><div class="sbox-s">${ST.members.length} miembros</div></div>
+    <div class="sbox"><div class="sbox-l">Pendiente liquidar</div><div class="sbox-v lv">${fmt(pending)}</div><div class="sbox-s">a transferir</div></div>`;
+
+  document.getElementById('elist').innerHTML = ST.expenses.length ? ST.expenses.map(e => {
+    const payer   = e.profiles?.name || e.profiles?.email?.split('@')[0] || 'Alguien';
+    const mySplit = e.expense_splits?.find(s => s.user_id === ST.user.id);
+    const iDidPay = e.paid_by === ST.user.id;
+    let myShareHTML = '';
+    if (mySplit) {
+      if (iDidPay) myShareHTML = `<span class="my-share ok">Tú pagaste</span>`;
+      else myShareHTML = `<span class="my-share owe">Debes ${fmt(mySplit.amount)}</span>`;
+    }
+    return `<div class="ei">
+      <div class="eico">${e.category||e.cat||'💸'}</div>
+      <div style="flex:1">
+        <div class="en">${e.description||e.desc}</div>
+        <div class="em2">Pagó <strong style="color:var(--text)">${payer}</strong> · ${ST.members.length} personas · ${fd(e.date)}</div>
+        ${myShareHTML}
+      </div>
+      <div>
+        <div class="ea">${fmt(e.amount)}</div>
+        <div class="ep">${fmt(e.amount/(e.expense_splits?.length||ST.members.length||1))}/p</div>
+      </div>
+    </div>`;
+  }).join('') : `<div class="empty"><div class="ei">💸</div><div class="et">Sin gastos</div><div class="es">Añade el primer gasto del viaje</div></div>`;
+}
+
+// ── BALANCES ──────────────────────────────────────────────────
+function computeBalances() {
+  const bal = {};
+  ST.members.forEach(m => { bal[m.user_id] = 0; });
+  ST.expenses.forEach(exp => {
+    bal[exp.paid_by] = (bal[exp.paid_by]||0) + Number(exp.amount);
+    exp.expense_splits?.forEach(sp => { bal[sp.user_id] = (bal[sp.user_id]||0) - Number(sp.amount); });
+  });
+  return bal;
+}
+function computeSettlements(balances) {
+  const cred=[], debt=[];
+  Object.entries(balances).forEach(([uid,b]) => { if(b>0.01) cred.push({uid,bal:b}); else if(b<-0.01) debt.push({uid,bal:-b}); });
+  const tx=[]; let ci=0,di=0;
+  while(ci<cred.length&&di<debt.length){ const c=cred[ci],d=debt[di],a=Math.min(c.bal,d.bal); tx.push({from:d.uid,to:c.uid,amount:parseFloat(a.toFixed(2))}); c.bal-=a;d.bal-=a; if(c.bal<0.01)ci++; if(d.bal<0.01)di++; }
+  return tx;
+}
+function calcSettleTotal() { return computeSettlements(computeBalances()).reduce((s,d)=>s+d.amount,0); }
+function getMemberProfile(uid) { return ST.members.find(m=>m.user_id===uid)?.profiles; }
+function getMemberName(uid) { const p=getMemberProfile(uid); return p?.name||p?.email?.split('@')[0]||'?'; }
+
+function renderBal() {
+  const balances = computeBalances();
+  document.getElementById('bgrid').innerHTML = Object.entries(balances).map(([uid,bal],i) => {
+    const p = getMemberProfile(uid);
+    const color = p?.avatar_color || COLORS[i%COLORS.length];
+    return `<div class="bc">
+      <div class="bav" style="background:${color}22;color:${color};border-color:${color}44">${initials(p?.name,p?.email)}</div>
+      <div class="bn">${p?.name||p?.email?.split('@')[0]||'?'}</div>
+      <div class="bam ${bal>0.01?'pos':bal<-0.01?'neg':'zer'}">${bal>0.01?'+':''}${fmt(bal)}</div>
+      <div class="bt2">${bal>0.01?'le deben':bal<-0.01?'debe':'al día ✓'}</div>
+    </div>`;
+  }).join('');
+
+  const txs = computeSettlements(balances);
+  document.getElementById('slist').innerHTML = txs.length ? txs.map(tx =>
+    `<div class="sitem">
+      <div class="stext"><strong>${getMemberName(tx.from)}</strong> → paga <strong>${fmt(tx.amount)}</strong> a <strong>${getMemberName(tx.to)}</strong></div>
+      <button class="btn-l" onclick="doSettle('${tx.from}','${tx.to}',${tx.amount})">Liquidado ✓</button>
+    </div>`
+  ).join('') : `<div style="text-align:center;padding:24px;color:var(--lime);font-weight:700;font-size:14px">✅ Todos los gastos están al día</div>`;
+}
+window.doSettle = async (from, to, amount) => {
+  if (!DEMO) await sb.from('settlements').insert({ trip_id:ST.cur.id, from_user:from, to_user:to, amount, created_by:ST.user.id });
+  toast(`✅ ${getMemberName(from)} pagó ${fmt(amount)} a ${getMemberName(to)}`);
+  renderBal();
+};
+
+// ── ADD EXPENSE ───────────────────────────────────────────────
+window.openM = (id) => {
+  if (id === 'm-ae') populateExpModal();
+  document.getElementById(id).classList.add('on');
+  document.getElementById('edate').value = new Date().toISOString().split('T')[0];
+};
+function populateExpModal() {
+  const payer = document.getElementById('ep2');
+  payer.innerHTML = ST.members.map(m => `<option value="${m.user_id}">${m.profiles?.name||m.profiles?.email?.split('@')[0]||'?'}${m.user_id===ST.user.id?' (Tú)':''}</option>`).join('');
+  const myEntry = ST.members.find(m=>m.user_id===ST.user.id);
+  if (myEntry) payer.value = ST.user.id;
+  ST.splitSel = ST.members.map(m=>m.user_id);
+  document.getElementById('esplt').innerHTML = ST.members.map((m,i) => {
+    const color = m.profiles?.avatar_color||COLORS[i%COLORS.length];
+    return `<div class="chip on" style="border-color:${color}44" onclick="togS(this,'${m.user_id}')">${m.profiles?.name||m.profiles?.email?.split('@')[0]||'?'}</div>`;
+  }).join('');
+  updSp();
+}
+window.togS = (el, uid) => { el.classList.toggle('on'); ST.splitSel=el.classList.contains('on')?[...ST.splitSel,uid]:ST.splitSel.filter(x=>x!==uid); updSp(); };
+window.updSp = () => {
+  const a=parseFloat(document.getElementById('ea').value)||0;
+  const n=ST.splitSel.length||1; const pp=a/n;
+  document.getElementById('sprev').innerHTML=`<div class="spr"><span>Dividido entre ${n} personas</span><strong>${fmt(pp)}/persona</strong></div>${ST.splitSel.map(uid=>`<div class="spr" style="opacity:0.6"><span>${getMemberName(uid)}</span><span>${fmt(pp)}</span></div>`).join('')}<div class="spr tot"><span>Total</span><strong>${fmt(a)}</strong></div>`;
+};
+window.addExpense = async () => {
+  const desc   = document.getElementById('ed').value.trim();
+  const amount = parseFloat(document.getElementById('ea').value);
+  const cat    = document.getElementById('ec').value;
+  const paidBy = document.getElementById('ep2').value;
+  const date   = document.getElementById('edate').value || new Date().toISOString().split('T')[0];
+  if (!desc||!amount) { toast('⚠️ Rellena descripción e importe'); return; }
+  if (!ST.splitSel.length) { toast('⚠️ Selecciona al menos una persona'); return; }
+
+  if (DEMO) {
+    const payer = getMemberProfile(paidBy);
+    const pp = amount/ST.splitSel.length;
+    ST.expenses.unshift({ id:'e-'+Date.now(), description:desc, amount, category:cat, paid_by:paidBy, date, profiles:payer, expense_splits:ST.splitSel.map(uid=>({user_id:uid,amount:pp})) });
+    ST.cur.total_spent = (ST.cur.total_spent||0) + amount;
+    ST.cur.expense_count = (ST.cur.expense_count||0) + 1;
+    closeM('m-ae'); renderGastos(); toast(`✅ "${desc}" — ${fmt(amount)}`);
+    return;
+  }
+
+  const { data: exp, error } = await sb.from('expenses').insert({ trip_id:ST.cur.id, description:desc, amount, category:cat, paid_by:paidBy, date, created_by:ST.user.id }).select().single();
+  if (error) { toast('❌ '+error.message); return; }
+  const pp = amount/ST.splitSel.length;
+  await sb.from('expense_splits').insert(ST.splitSel.map(uid => ({ expense_id:exp.id, user_id:uid, amount:parseFloat(pp.toFixed(2)) })));
+  closeM('m-ae');
+  await openTrip(ST.cur.id);
+  toast(`✅ "${desc}" — ${fmt(amount)}`);
+};
+
+// ── ITINERARY ─────────────────────────────────────────────────
+window.selI = (el,i) => { ST.icon=i; document.querySelectorAll('#ipick .eopt').forEach(x=>x.classList.remove('on')); el.classList.add('on'); };
+window.addItem = async () => {
+  const name = document.getElementById('in2').value.trim();
+  if (!name) { toast('⚠️ Añade el nombre'); return; }
+  const item = { trip_id:ST.cur.id, name, icon:ST.icon, day_number:parseInt(document.getElementById('iday').value)||1, start_time:document.getElementById('itime').value||'10:00', cost_estimate:parseFloat(document.getElementById('ic').value)||0, notes:document.getElementById('inotes').value, created_by:DEMO?'demo-user':ST.user.id };
+  if (!DEMO) { const {data} = await sb.from('itinerary_items').insert(item).select().single(); ST.itin.push(data); }
+  else ST.itin.push({ id:'i-'+Date.now(), ...item });
+  closeM('m-ai'); renderItin(); toast(`✅ "${name}" añadido`);
+};
+function renderItin() {
+  const bd={};
+  ST.itin.forEach(i=>{ if(!bd[i.day_number])bd[i.day_number]=[]; bd[i.day_number].push(i); });
+  document.getElementById('itin-el').innerHTML = Object.keys(bd).sort((a,b)=>a-b).map(d =>
+    `<div class="iday"><div class="dsep"><div class="dlbl">Día ${d}</div><div class="dline"></div></div>
+    ${bd[d].sort((a,b)=>(a.start_time||'').localeCompare(b.start_time||'')).map(i =>
+      `<div class="ii"><div class="itime">${i.start_time||'--:--'}</div><div class="iico">${i.icon}</div><div style="flex:1"><div class="iname">${i.name}</div><div class="isub">${i.cost_estimate>0?fmt(i.cost_estimate)+'/persona':'Gratis'}</div></div>${i.cost_estimate>0?`<div class="iprice">${fmt(i.cost_estimate)}</div>`:''}</div>`
+    ).join('')}</div>`
+  ).join('') || `<div class="empty"><div class="ei">🗓</div><div class="et">Sin itinerario</div><div class="es">Añade actividades al plan del grupo</div></div>`;
+}
+
+// ── MEMBERS ───────────────────────────────────────────────────
+function renderMembers() {
+  document.getElementById('invite-code-display').textContent = ST.cur?.invite_code || '---';
+  document.getElementById('members-grid').innerHTML = ST.members.map((m,i) => {
+    const p = m.profiles;
+    const color = p?.avatar_color||COLORS[i%COLORS.length];
+    return `<div class="member-card">
+      <div class="member-av" style="background:${color}22;color:${color};border:2px solid ${color}44;width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;flex-shrink:0">${initials(p?.name,p?.email)}</div>
+      <div>
+        <div class="member-name">${p?.name||'Sin nombre'}</div>
+        <div class="member-email">${p?.email||''}</div>
+        <span class="member-role role-${m.role}">${m.role==='owner'?'🔑 Admin':'Miembro'}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+window.doInvite = async () => {
+  const email = document.getElementById('invite-email').value.trim().toLowerCase();
+  const alertEl = document.getElementById('members-alert');
+  if (!email) return;
+  if (DEMO) { alertEl.innerHTML=`<div class="alert ok">✅ En la versión real, se enviaría un correo a ${email}</div>`; return; }
+  const { data: inv, error } = await sb.from('trip_invitations').upsert({ trip_id:ST.cur.id, email, invited_by:ST.user.id }, {onConflict:'trip_id,email'}).select().single();
+  if (error) { alertEl.innerHTML=`<div class="alert err">${error.message}</div>`; return; }
+  if (typeof emailjs !== 'undefined') {
+    emailjs.send('YOUR_SERVICE_ID','YOUR_TEMPLATE_ID',{ to_email:email, trip_name:ST.cur.name, trip_dest:ST.cur.destination, inviter:ST.profile?.name||ST.user.email, join_url:`${location.origin}?join=${inv.token}`, trip_emoji:ST.cur.emoji }).catch(()=>{});
+  }
+  alertEl.innerHTML=`<div class="alert ok">✅ Invitación enviada a ${email}</div>`;
+  document.getElementById('invite-email').value='';
+  setTimeout(()=>alertEl.innerHTML='', 4000);
+};
+
+// ── CHAT ──────────────────────────────────────────────────────
+let chatChannel = null;
+function renderChat() {
+  const el = document.getElementById('cmsgs');
+  el.innerHTML = ST.msgs.map(m => {
+    const isMe = m.user_id === ST.user.id;
+    const p = m.profiles;
+    const color = p?.avatar_color||'#888';
+    return `<div class="cmsg ${isMe?'me':''}">
+      ${!isMe?`<div class="cav" style="background:${color}22;color:${color};border-color:${color}44;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;border:2px solid">${initials(p?.name,p?.email)}</div>`:''}
+      <div class="cbub">
+        ${!isMe?`<div style="font-size:11px;font-weight:700;margin-bottom:3px;color:${color}">${p?.name||p?.email?.split('@')[0]||'?'}</div>`:''}
+        ${m.content}
+        <div class="cmeta">${relTime(m.created_at)}</div>
+      </div>
+      ${isMe?`<div class="cav" style="background:var(--coral)22;color:var(--coral);border-color:var(--coral)44;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;border:2px solid">${initials(ST.profile?.name,ST.profile?.email)}</div>`:''}
+    </div>`;
+  }).join('');
+  el.scrollTop = el.scrollHeight;
+}
+function subscribeChat() {
+  if (!DEMO && ST.cur) {
+    if (chatChannel) sb.removeChannel(chatChannel);
+    chatChannel = sb.channel(`msgs:${ST.cur.id}`).on('postgres_changes',{event:'INSERT',schema:'public',table:'messages',filter:`trip_id=eq.${ST.cur.id}`}, async payload => {
+      const { data } = await sb.from('messages').select('*, profiles(id,name,email,avatar_color)').eq('id',payload.new.id).single();
+      if (data) { ST.msgs.push(data); renderChat(); }
+    }).subscribe();
+  }
+}
+async function loadMsgs() {
+  if (!DEMO) {
+    const { data } = await sb.from('messages').select('*, profiles(id,name,email,avatar_color)').eq('trip_id',ST.cur.id).order('created_at').limit(100);
+    ST.msgs = data||[];
+  }
+  renderChat();
+}
+window.sendMsg = async () => {
+  const inp = document.getElementById('cinput');
+  const content = inp.value.trim();
+  if (!content) return;
+  inp.value = '';
+  if (DEMO) {
+    ST.msgs.push({ id:'msg-'+Date.now(), user_id:ST.user.id, content, created_at:new Date().toISOString(), profiles:{ ...ST.profile, name:ST.profile?.name||'Tú' } });
+    renderChat(); return;
+  }
+  await sb.from('messages').insert({ trip_id:ST.cur.id, user_id:ST.user.id, content });
+};
+
+// ── MARKETPLACE ───────────────────────────────────────────────
+const MKT = [
+  {id:1,type:"hotel",name:"Apartamento Cala Vadella",loc:"Ibiza, España",emoji:"🏖",price:170,unit:"/noche",stars:4.8,rev:124,gf:"#0A3A2A",gt:"#0A1E0A",coming:false},
+  {id:2,type:"vuelo",name:"Madrid ✈ Ibiza (ida y vuelta)",loc:"Iberia Express",emoji:"✈️",price:89,unit:"/persona",stars:4.2,rev:890,gf:"#0A1A3A",gt:"#0A0F1E",coming:true},
+  {id:3,type:"tour",name:"Catamarán al atardecer",loc:"Puerto de Ibiza",emoji:"⛵",price:65,unit:"/persona",stars:4.9,rev:342,gf:"#0A2A3A",gt:"#0A151E",coming:true},
+  {id:4,type:"aventura",name:"Quad safari por la isla",loc:"Ibiza Interior",emoji:"🏍",price:95,unit:"/persona",stars:4.6,rev:87,gf:"#3A1A0A",gt:"#1E0F0A",coming:true},
+  {id:5,type:"restaurante",name:"Mesa en Es Torrent",loc:"Es Torrent, Ibiza",emoji:"🦞",price:85,unit:"/persona",stars:4.7,rev:512,gf:"#2A0A0A",gt:"#1E0A0A",coming:true},
+  {id:6,type:"hotel",name:"Riad Dar Najat",loc:"Medina, Marrakech",emoji:"🏛",price:90,unit:"/noche",stars:4.8,rev:203,gf:"#2A1A0A",gt:"#1E0F0A",coming:false},
+  {id:7,type:"tour",name:"Sahara 3 días con camello",loc:"Merzouga, Marruecos",emoji:"🐪",price:280,unit:"/persona",stars:4.9,rev:156,gf:"#2A2A0A",gt:"#1A1A0A",coming:true},
+  {id:8,type:"aventura",name:"Surf en Taghazout",loc:"Agadir, Marruecos",emoji:"🏄",price:120,unit:"/persona",stars:4.5,rev:78,gf:"#0A1A2A",gt:"#0A0F1A",coming:true},
+  {id:9,type:"restaurante",name:"Nomad Rooftop Dinner",loc:"Marrakech, Marruecos",emoji:"🍷",price:45,unit:"/persona",stars:4.6,rev:430,gf:"#1A0A2A",gt:"#0F0A1E",coming:true},
+  {id:10,type:"vuelo",name:"Madrid ✈ Marrakech",loc:"Ryanair",emoji:"✈️",price:74,unit:"/persona",stars:3.9,rev:1200,gf:"#0A1030",gt:"#0A0F1E",coming:true},
+  {id:11,type:"aventura",name:"Senderismo Sierra Nevada",loc:"Granada, España",emoji:"🏔",price:55,unit:"/persona",stars:4.7,rev:89,gf:"#0A2A1A",gt:"#0A1610",coming:true},
+  {id:12,type:"restaurante",name:"Sobrino de Botín",loc:"Madrid, España",emoji:"🥩",price:70,unit:"/persona",stars:4.4,rev:2100,gf:"#2A0A10",gt:"#1E0A0A",coming:true},
+];
+function renderMkt(f='all') {
+  const items = f==='all'?MKT:MKT.filter(i=>i.type===f);
+  const clbl = {hotel:'🏨 Hotel',vuelo:'✈️ Vuelo',tour:'🗺 Tour',aventura:'🧗 Aventura',restaurante:'🍽 Restaurante'};
+  document.getElementById('mgrid').innerHTML = items.map(i =>
+    `<div class="mcard${i.coming?' coming':''}">
+      ${i.coming?`<div class="coming-overlay"><div class="coming-pill">🔜 Pronto</div></div>`:''}
+      <div class="mimg" style="background:linear-gradient(135deg,${i.gf},${i.gt})">
+        <span style="font-size:60px;position:relative;z-index:1">${i.emoji}</span>
+        <div class="movl"></div>
+        <div class="mcat">${clbl[i.type]||i.type}</div>
+      </div>
+      <div class="mbody">
+        <div class="mname">${i.name}</div>
+        <div class="mloc">📍 ${i.loc}</div>
+        <div class="mfoot">
+          <div>
+            <div class="mprice">${fmt(i.price)}<span class="munit">${i.unit}</span></div>
+            <div class="mstars"><em>★</em> ${i.stars} · ${i.rev} reseñas</div>
+          </div>
+          ${!i.coming?`<button class="btn-l" onclick="toast('✅ Añadido al itinerario')">+ Añadir</button>`:'<span style="font-size:12px;color:var(--text3)">Reservas pronto</span>'}
+        </div>
+      </div>
+    </div>`
+  ).join('');
+}
+window.fltM = (f, btn) => { document.querySelectorAll('.mfb').forEach(b=>b.classList.remove('on')); btn.classList.add('on'); renderMkt(f); };
+
+// ── PROFILE ───────────────────────────────────────────────────
+function loadProfilePage() {
+  const p = ST.profile;
+  if (!p) return;
+  document.getElementById('p-name').value = p.name||'';
+  document.getElementById('profile-name-disp').textContent = p.name || p.email?.split('@')[0] || 'Sin nombre';
+  document.getElementById('profile-email-disp').textContent = p.email || '';
+  const color = p.avatar_color||'#FF5C3A';
+  const bigAv = document.getElementById('profile-av-big');
+  bigAv.textContent = initials(p.name, p.email);
+  bigAv.style.cssText = `background:${color}22;color:${color};border:3px solid ${color}44;width:80px;height:80px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:800;margin:0 auto 16px`;
+
+  document.getElementById('color-pick').innerHTML = PALETTE.map(c =>
+    `<div class="cp-dot${c===color?' on':''}" style="background:${c}" onclick="selectColor('${c}')"></div>`
+  ).join('');
+}
+window.selectColor = (c) => {
+  if (ST.profile) ST.profile.avatar_color = c;
+  document.querySelectorAll('.cp-dot').forEach(d => d.classList.toggle('on', d.style.background===c));
+  loadProfilePage();
+};
+window.saveProfile = async () => {
+  const name  = document.getElementById('p-name').value.trim();
+  const color = ST.profile?.avatar_color;
+  const alertEl = document.getElementById('profile-alert');
+  if (DEMO) {
+    ST.profile = { ...ST.profile, name, avatar_color:color };
+    updateTopbarAvatar();
+    alertEl.innerHTML = '<div class="alert ok">✅ Perfil guardado (demo)</div>';
+    setTimeout(()=>alertEl.innerHTML='', 3000);
+    loadProfilePage(); return;
+  }
+  const { error } = await sb.from('profiles').update({ name, avatar_color:color }).eq('id', ST.user.id);
+  if (error) { alertEl.innerHTML=`<div class="alert err">${error.message}</div>`; return; }
+  ST.profile = { ...ST.profile, name, avatar_color:color };
+  updateTopbarAvatar();
+  alertEl.innerHTML = '<div class="alert ok">✅ Perfil guardado</div>';
+  setTimeout(()=>alertEl.innerHTML='', 3000);
+  loadProfilePage();
+};
+
+// ── MODAL HELPERS ─────────────────────────────────────────────
+window.closeM = (id) => document.getElementById(id).classList.remove('on');
+window.clov   = (e, id) => { if(e.target.classList.contains('mov')) closeM(id); };
+
+// ── UTILS ─────────────────────────────────────────────────────
+function initials(name, email) { const n=name||email||'?'; return n.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2); }
+function fmt(n) { return new Intl.NumberFormat('es-ES',{style:'currency',currency:'EUR',minimumFractionDigits:0,maximumFractionDigits:2}).format(n||0); }
+function fd(d) { if(!d)return''; const dt=new Date(d+'T00:00:00'); return dt.toLocaleDateString('es-ES',{day:'numeric',month:'short'}); }
+function relTime(ts) {
+  const diff = Date.now()-new Date(ts).getTime();
+  if (diff<60000) return 'Ahora';
+  if (diff<3600000) return `Hace ${Math.floor(diff/60000)} min`;
+  if (diff<86400000) return `Hace ${Math.floor(diff/3600000)} h`;
+  return `Hace ${Math.floor(diff/86400000)} días`;
+}
+window.toast = (msg) => {
+  const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('on');
+  setTimeout(()=>t.classList.remove('on'),3000);
+};
+
+// ── BOOT ──────────────────────────────────────────────────────
+boot();
+</script>
+</body>
+</html>
