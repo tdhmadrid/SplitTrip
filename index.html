@@ -850,6 +850,7 @@ window.showT = function(id, btn) {
   var pane = document.getElementById('t-'+id);
   if (pane) pane.classList.add('on');
   btn.classList.add('on');
+  if (!ST.cur) return;
   if (id === 'bal')      renderBal();
   if (id === 'itin')     renderItin();
   if (id === 'miembros') renderMembers();
@@ -1010,15 +1011,18 @@ function renderTrips() {
 }
 
 window.openTrip = async function(id) {
+  if (!id) { console.warn('openTrip: no id'); return; }
+
+  // Try from cache first, then reload
   var trip = ST.trips.find(function(t){ return t.id === id; });
-  if (!trip) return;
 
   window.showMain('det');
   document.querySelectorAll('.tb').forEach(function(b,i){ b.classList.toggle('on', i===0); });
   document.querySelectorAll('.tp').forEach(function(p,i){ p.classList.toggle('on', i===0); });
 
   if (DEMO) {
-    ST.cur     = Object.assign({}, trip, { invite_code: trip.invite_code || 'DEMO1234' });
+    ST.cur = Object.assign({}, trip, { invite_code: trip.invite_code || 'DEMO1234' });
+    if (!ST.cur.id) ST.cur.id = id;
     ST.members = [
       { user_id:'demo-user', role:'owner', profiles:{ id:'demo-user', name:'Tú',     email:'tu@email.com',     avatar_color:'#FF5C3A' } },
       { user_id:'u2',        role:'member',profiles:{ id:'u2',        name:'Carlos', email:'carlos@email.com', avatar_color:'#39E07B' } },
@@ -1051,6 +1055,11 @@ window.openTrip = async function(id) {
   }
 
   var tripRes = await sb.from('trips').select('*').eq('id', id).single();
+  if (tripRes.error || !tripRes.data) {
+    console.error('Could not load trip:', tripRes.error);
+    showToast('❌ Error cargando el viaje');
+    return;
+  }
   ST.cur = tripRes.data;
   var results = await Promise.all([
     sb.from('trip_members').select('*, profiles(*)').eq('trip_id', id),
@@ -1301,6 +1310,7 @@ window.doSettle = async function(from, to, amount) {
 
 // ── EXPENSE MODAL ─────────────────────────────────────────────
 window.openM = function(id) {
+  if (id === 'm-ae' && !ST.cur) { showToast('⚠️ Selecciona un viaje primero'); return; }
   if (id === 'm-ae') populateExpModal();
   document.getElementById(id).classList.add('on');
   var dateEl = document.getElementById('edate');
@@ -1343,6 +1353,7 @@ window.updSp = function() {
     +'<div class="spr tot"><span>Total</span><strong>'+fmt(aVal)+'</strong></div>';
 };
 window.addExpense = async function() {
+  if (!ST.cur) { showToast('⚠️ No hay viaje activo'); return; }
   var descVal   = document.getElementById('ed').value.trim();
   var amountVal = parseFloat(document.getElementById('ea').value);
   var catVal    = document.getElementById('ec').value;
@@ -1375,6 +1386,7 @@ window.selI = function(el, icon) {
   el.classList.add('on');
 };
 window.addItem = async function() {
+  if (!ST.cur) { showToast('⚠️ No hay viaje activo'); return; }
   var nameVal = document.getElementById('in2').value.trim();
   if (!nameVal) { showToast('⚠️ Añade el nombre'); return; }
   var itemData = { trip_id:ST.cur.id, name:nameVal, icon:ST.icon,
@@ -1436,6 +1448,7 @@ function renderMembers() {
   }).join('');
 }
 window.doInvite = async function() {
+  if (!ST.cur) { console.warn('No trip loaded'); return; }
   var invEmail = document.getElementById('invite-email').value.trim().toLowerCase();
   var alertEl  = document.getElementById('members-alert');
   if (!invEmail) return;
@@ -1482,6 +1495,7 @@ function subscribeChat() {
   }
 }
 async function loadMsgs() {
+  if (!ST.cur) return;
   if (!DEMO) {
     var res = await sb.from('messages').select('*, profiles(id,name,email,avatar_color)').eq('trip_id',ST.cur.id).order('created_at').limit(100);
     ST.msgs = res.data||[];
@@ -1489,6 +1503,7 @@ async function loadMsgs() {
   renderChat();
 }
 window.sendMsg = async function() {
+  if (!ST.cur) return;
   var inp     = document.getElementById('cinput');
   var msgText = inp.value.trim();
   if (!msgText) return;
