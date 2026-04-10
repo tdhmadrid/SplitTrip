@@ -8,7 +8,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 <script>
   // Init EmailJS — replace with your public key
-  (function(){ emailjs.init({ publicKey: "YOUR_EMAILJS_PUBLIC_KEY" }); })();
+  (function(){ emailjs.init({ publicKey: "hYCaFvgoRnvV8aMym" }); })();
 </script>
 <style>
 /* ── DESIGN TOKENS ──────────────────────────────────────────── */
@@ -1075,7 +1075,7 @@ window.createTrip = async () => {
   for (const email of ntInvites) {
     const { data: inv } = await sb.from('trip_invitations').insert({ trip_id:trip.id, email, invited_by:ST.user.id }).select().single();
     if (inv && typeof emailjs !== 'undefined') {
-      emailjs.send('YOUR_SERVICE_ID','YOUR_TEMPLATE_ID',{ to_email:email, trip_name:trip.name, trip_dest:dest, inviter:ST.profile?.name||ST.user.email, join_url:`${location.origin}?join=${inv.token}`, trip_emoji:ST.emoji }).catch(()=>{});
+      emailjs.send('service_bs2v5pt','template_ryzj0ko',{ to_email:email, trip_name:trip.name, trip_dest:dest, inviter:ST.profile?.name||ST.user.email, join_url:`${location.origin}?join=${inv.token}`, trip_emoji:ST.emoji }).catch(()=>{});
     }
   }
   ntInvites = [];
@@ -1288,7 +1288,7 @@ window.doInvite = async () => {
   const { data: inv, error } = await sb.from('trip_invitations').upsert({ trip_id:ST.cur.id, email, invited_by:ST.user.id }, {onConflict:'trip_id,email'}).select().single();
   if (error) { alertEl.innerHTML=`<div class="alert err">${error.message}</div>`; return; }
   if (typeof emailjs !== 'undefined') {
-    emailjs.send('YOUR_SERVICE_ID','YOUR_TEMPLATE_ID',{ to_email:email, trip_name:ST.cur.name, trip_dest:ST.cur.destination, inviter:ST.profile?.name||ST.user.email, join_url:`${location.origin}?join=${inv.token}`, trip_emoji:ST.cur.emoji }).catch(()=>{});
+    emailjs.send('service_bs2v5pt','template_ryzj0ko',{ to_email:email, trip_name:ST.cur.name, trip_dest:ST.cur.destination, inviter:ST.profile?.name||ST.user.email, join_url:`${location.origin}?join=${inv.token}`, trip_emoji:ST.cur.emoji }).catch(()=>{});
   }
   alertEl.innerHTML=`<div class="alert ok">✅ Invitación enviada a ${email}</div>`;
   document.getElementById('invite-email').value='';
