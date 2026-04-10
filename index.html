@@ -8,11 +8,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SplitTrip — Viaja en grupo, divide fácil</title>
 <link href="https://fonts.googleapis.com/css2?family=Cabinet+Grotesk:wght@400;500;700;800;900&family=Satoshi:wght@300;400;500;700&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
-<script>
-  // Init EmailJS — replace with your public key
-  (function(){ emailjs.init({ publicKey: "hYCaFvgoRnvV8aMym" }); })();
-</script>
+<!-- EmailJS removed — using Resend via Supabase Edge Function -->
 <style>
 /* ── DESIGN TOKENS ──────────────────────────────────────────── */
 :root {
@@ -755,6 +751,34 @@ var ST = {
   pendingJoin:null
 };
 
+// ── RESEND EMAIL via Supabase Edge Function ───────────────────
+async function sendInviteEmail(toEmail, token, tripName, tripDest, tripEmoji) {
+  try {
+    var joinUrl = location.origin + location.pathname + '?join=' + token;
+    var inviterName = (ST.profile && ST.profile.name) || (ST.user && ST.user.email) || 'Tu amigo/a';
+    
+    var res = await fetch('https://omhqcxzlokumzwywfuxh.supabase.co/functions/v1/send-invite', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + SKEY
+      },
+      body: JSON.stringify({
+        to: toEmail,
+        inviter: inviterName,
+        trip_name: tripName,
+        trip_dest: tripDest,
+        trip_emoji: tripEmoji,
+        join_url: joinUrl
+      })
+    });
+    var data = await res.json();
+    console.log('Email sent:', data);
+  } catch(e) {
+    console.warn('Email error (non-blocking):', e);
+  }
+}
+
 (function() {
 'use strict';
 
@@ -1125,13 +1149,8 @@ window.createTrip = async function() {
   for (var i=0; i<ST.ntInvites.length; i++) {
     var invEmail = ST.ntInvites[i];
     var invRes   = await sb.from('trip_invitations').insert({ trip_id:tripData.id, email:invEmail, invited_by:ST.user.id }).select().single();
-    if (invRes.data && typeof emailjs !== 'undefined') {
-      emailjs.send('service_bs2v5pt','template_ryzj0ko',{
-        to_email:invEmail, trip_name:tripData.name, trip_dest:destVal,
-        inviter:(ST.profile&&ST.profile.name)||ST.user.email,
-        join_url:location.origin+location.pathname+'?join='+invRes.data.token,
-        trip_emoji:ST.emoji
-      }).catch(function(){});
+    if (invRes.data) {
+      sendInviteEmail(invEmail, invRes.data.token, tripData.name, destVal, ST.emoji);
     }
   }
   ST.ntInvites = [];
@@ -1423,13 +1442,8 @@ window.doInvite = async function() {
   if (DEMO) { alertEl.innerHTML='<div class="alert ok">✅ En la versión real se enviaría un correo a '+invEmail+'</div>'; return; }
   var invRes = await sb.from('trip_invitations').upsert({ trip_id:ST.cur.id, email:invEmail, invited_by:ST.user.id }, {onConflict:'trip_id,email'}).select().single();
   if (invRes.error) { alertEl.innerHTML='<div class="alert err">'+invRes.error.message+'</div>'; return; }
-  if (typeof emailjs !== 'undefined') {
-    emailjs.send('service_bs2v5pt','template_ryzj0ko',{
-      to_email:invEmail, trip_name:ST.cur.name, trip_dest:ST.cur.destination,
-      inviter:(ST.profile&&ST.profile.name)||ST.user.email,
-      join_url:location.origin+location.pathname+'?join='+invRes.data.token,
-      trip_emoji:ST.cur.emoji
-    }).catch(function(){});
+  if (invRes.data) {
+    sendInviteEmail(invEmail, invRes.data.token, ST.cur.name, ST.cur.destination, ST.cur.emoji);
   }
   alertEl.innerHTML='<div class="alert ok">✅ Invitación enviada a '+invEmail+'</div>';
   document.getElementById('invite-email').value='';
